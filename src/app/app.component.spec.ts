@@ -6,19 +6,23 @@ import { ToastrModule } from 'ngx-toastr';
 import { NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
+import { MemoryService } from './memory.service';
+import { TauriService } from './services/tauri.service';
+import { PlaylistService } from './services/playlist.service';
+import { ErrorService } from './error.service';
+
 describe('AppComponent', () => {
   beforeEach(async () => {
-    (window as any).__TAURI_INTERNALS__ = {
-      invoke: () => Promise.resolve(false),
-      metadata: {
-        tauri: '2.0.0',
-      },
-      postMessage: () => {},
-    };
     await TestBed.configureTestingModule({
       imports: [RouterTestingModule, MatProgressBarModule, ToastrModule.forRoot(), NgbModalModule],
       declarations: [AppComponent],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
+      providers: [
+        { provide: MemoryService, useValue: { settings: {} } },
+        { provide: TauriService, useValue: { call: () => Promise.resolve([]) } },
+        { provide: PlaylistService, useValue: { checkEpgOnStart: () => {} } },
+        { provide: ErrorService, useValue: { handleError: () => {} } },
+      ],
     }).compileComponents();
   });
 

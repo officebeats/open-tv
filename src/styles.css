@@ -34,9 +34,13 @@
     linear-gradient(180deg, #141414 0%, #080808 100%);
 }
 
-body {
+html, body {
+  background: var(--app-bg);
   background-color: var(--beats-black);
+  background-attachment: fixed;
+  background-size: cover;
   color: var(--beats-text-white);
+  min-height: 100vh;
 }
 
 /* --- Bootstrap Overrides for Claymorphism Red Theme --- */
@@ -287,6 +291,7 @@ input[type="range"]:focus::-ms-thumb {
 }
 
 .selectable {
+  -webkit-user-select: auto;
   user-select: auto;
 }
 
@@ -301,14 +306,10 @@ p {
 
 html {
   overflow-y: scroll;
-}
-
-html,
-body {
-  height: fit-content;
   -webkit-user-select: none;
   user-select: none;
 }
+
 body {
   margin: 0;
   font-family: "Roboto", sans-serif;

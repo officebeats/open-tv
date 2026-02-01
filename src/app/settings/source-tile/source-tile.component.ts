@@ -22,13 +22,12 @@
 import { Component, Input } from '@angular/core';
 import { Source } from '../../models/source';
 import { SourceType } from '../../models/sourceType';
-import { invoke } from '@tauri-apps/api/core';
+import { TauriService } from '../../services/tauri.service';
 import { MemoryService } from '../../memory.service';
-import { EditChannelModalComponent } from '../../edit-channel-modal/edit-channel-modal.component';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { EditChannelModalComponent } from '../../edit-channel-modal/edit-channel-modal.component';
 import { EditGroupModalComponent } from '../../edit-group-modal/edit-group-modal.component';
 import { ImportModalComponent } from '../../import-modal/import-modal.component';
-import { open, save } from '@tauri-apps/plugin-dialog';
 import { CHANNEL_EXTENSION, FAVS_BACKUP, PLAYLIST_EXTENSION } from '../../models/extensions';
 import { sanitizeFileName } from '../../utils';
 
@@ -57,6 +56,7 @@ export class SourceTileComponent {
   constructor(
     public memory: MemoryService,
     private modal: NgbModal,
+    private tauri: TauriService,
   ) {}
 
   async toggleDetails() {
@@ -64,7 +64,7 @@ export class SourceTileComponent {
     if (this.showDetails && !this.details && this.source?.source_type == SourceType.Xtream) {
       this.loadingDetails = true;
       try {
-        this.details = await invoke<XtreamPanelInfo>('get_xtream_source_details', {
+        this.details = await this.tauri.call<XtreamPanelInfo>('get_xtream_source_details', {
           source: this.source,
         });
       } catch (e) {
@@ -94,7 +94,7 @@ export class SourceTileComponent {
     this.memory.RefreshPercent = 0;
     try {
       await this.memory.tryIPC('Successfully updated source', 'Failed to refresh source', () =>
-        invoke('refresh_source', { source: this.source }),
+        this.tauri.call('refresh_source', { source: this.source }),
       );
     } finally {
       this.memory.IsRefreshing = false;
@@ -106,14 +106,14 @@ export class SourceTileComponent {
 
   async delete() {
     await this.memory.tryIPC('Successfully deleted source', 'Failed to delete source', () =>
-      invoke('delete_source', { id: this.source?.id }),
+      this.tauri.call('delete_source', { id: this.source?.id }),
     );
     this.memory.RefreshSources.next(true);
   }
 
   async toggleEnabled() {
     await this.memory.tryIPC('Successfully toggled source', 'Failed to toggle source', () =>
-      invoke('toggle_source', { value: !this.source?.enabled, sourceId: this.source?.id }),
+      this.tauri.call('toggle_source', { value: !this.source?.enabled, sourceId: this.source?.id }),
     );
     this.memory.RefreshSources.next(true);
   }
@@ -152,7 +152,7 @@ export class SourceTileComponent {
   }
 
   async share() {
-    let file = await save({
+    let file = await this.tauri.saveDialog({
       canCreateDirectories: true,
       title: 'Select where to export custom source',
       defaultPath: sanitizeFileName(this.source?.name!) + PLAYLIST_EXTENSION,
@@ -161,7 +161,7 @@ export class SourceTileComponent {
       await this.memory.tryIPC(
         `Successfully exported source in ${file}`,
         'Failed to export source',
-        () => invoke('share_custom_source', { source: this.source, path: file }),
+        () => this.tauri.call('share_custom_source', { source: this.source, path: file }),
       );
     }
   }
@@ -178,7 +178,7 @@ export class SourceTileComponent {
       if (this.editableSource.user_agent == '') this.editableSource.user_agent = undefined;
       if (this.editableSource.stream_user_agent == '')
         this.editableSource.stream_user_agent = undefined;
-      await invoke('update_source', { source: this.editableSource });
+      await this.tauri.call('update_source', { source: this.editableSource });
       this.source = this.editableSource;
       this.editing = false;
       this.editableSource = {};
@@ -186,14 +186,18 @@ export class SourceTileComponent {
   }
 
   async browse() {
-    const file = await open({
+    const file = await this.tauri.openDialog({
       multiple: false,
       directory: false,
       title: 'Select a new m3u file for source',
       filters: [{ name: 'extension', extensions: ['m3u', 'm3u8'] }],
     });
     if (file) {
-      this.editableSource.url = file;
+      if (typeof file === 'string') {
+        this.editableSource.url = file;
+      } else if (Array.isArray(file) && file.length > 0) {
+        this.editableSource.url = file[0];
+      }
     }
   }
 
@@ -203,7 +207,7 @@ export class SourceTileComponent {
   }
 
   async backupFavs() {
-    const file = await save({
+    const file = await this.tauri.saveDialog({
       canCreateDirectories: true,
       title: 'Select where to save favorites',
       defaultPath: `${sanitizeFileName(this.source?.name!)}_favs${FAVS_BACKUP}`,
@@ -213,14 +217,14 @@ export class SourceTileComponent {
         'Successfully saved favorites backup',
         'Failed to save favorites backup',
         async () => {
-          await invoke('backup_favs', { id: this.source?.id, path: file });
+          await this.tauri.call('backup_favs', { id: this.source?.id, path: file });
         },
       );
     }
   }
 
   async restoreFavs() {
-    const file = await open({
+    const file = await this.tauri.openDialog({
       canCreateDirectories: false,
       title: 'Select a favorites backup',
       directory: false,
@@ -232,7 +236,11 @@ export class SourceTileComponent {
         'Successfully saved favorites backup',
         'Failed to save favorites backup',
         async () => {
-          await invoke('restore_favs', { id: this.source?.id, path: file });
+          let path = '';
+          if (typeof file === 'string') path = file;
+          else if (Array.isArray(file) && file.length > 0) path = file[0];
+
+          if (path) await this.tauri.call('restore_favs', { id: this.source?.id, path: path });
         },
       );
     }

@@ -2,13 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { Group } from '../models/group';
 import { ErrorService } from '../error.service';
-import { invoke } from '@tauri-apps/api/core';
 import { MemoryService } from '../memory.service';
+import { TauriService } from '../services/tauri.service';
 
 @Component({
   selector: 'app-edit-group-modal',
   templateUrl: './edit-group-modal.component.html',
-  styleUrl: './edit-group-modal.component.css'
+  styleUrl: './edit-group-modal.component.css',
 })
 export class EditGroupModalComponent {
   editing: boolean = false;
@@ -16,16 +16,17 @@ export class EditGroupModalComponent {
   loading = false;
   originalName?: string;
 
-  constructor(public activeModal: NgbActiveModal, private error: ErrorService, private memory: MemoryService) {
-
-  }
+  constructor(
+    public activeModal: NgbActiveModal,
+    private error: ErrorService,
+    private memory: MemoryService,
+    private tauri: TauriService,
+  ) {}
 
   save() {
     this.loading = true;
-    if (this.editing)
-      this.edit_group();
-    else
-      this.add_group();
+    if (this.editing) this.edit_group();
+    else this.add_group();
     this.loading = false;
   }
 
@@ -37,12 +38,11 @@ export class EditGroupModalComponent {
   async edit_group() {
     try {
       this.sanitize();
-      await invoke("edit_custom_group", { group: this.group });
-      this.error.success("Successfully updated category");
+      await this.tauri.call('edit_custom_group', { group: this.group });
+      this.error.success('Successfully updated category');
       this.memory.Refresh.next(true);
-      this.activeModal.close("close");
-    }
-    catch (e) {
+      this.activeModal.close('close');
+    } catch (e) {
       this.error.handleError(e);
     }
   }
@@ -50,12 +50,11 @@ export class EditGroupModalComponent {
   async add_group() {
     try {
       this.sanitize();
-      await invoke("add_custom_group", { group: this.group })
-      this.error.success("Successfully added category");
+      await this.tauri.call('add_custom_group', { group: this.group });
+      this.error.success('Successfully added category');
       this.memory.RefreshSources.next(true);
-      this.activeModal.close("close");
-    }
-    catch (e) {
+      this.activeModal.close('close');
+    } catch (e) {
       this.error.handleError(e);
     }
   }

@@ -3,6 +3,9 @@ import { NgbActiveModal, NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrModule } from 'ngx-toastr';
 import { FormsModule } from '@angular/forms';
 import { EditChannelModalComponent } from './edit-channel-modal.component';
+import { MemoryService } from '../memory.service';
+import { TauriService } from '../services/tauri.service';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 describe('EditChannelModalComponent', () => {
   let component: EditChannelModalComponent;
@@ -12,7 +15,12 @@ describe('EditChannelModalComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [EditChannelModalComponent],
       imports: [ToastrModule.forRoot(), NgbTypeaheadModule, FormsModule],
-      providers: [NgbActiveModal],
+      schemas: [CUSTOM_ELEMENTS_SCHEMA],
+      providers: [
+        NgbActiveModal,
+        { provide: MemoryService, useValue: { settings: {} } },
+        { provide: TauriService, useValue: { call: () => Promise.resolve([]) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EditChannelModalComponent);

@@ -13,7 +13,7 @@ import { MatMenuTrigger } from '@angular/material/menu';
 import { Channel } from '../models/channel';
 import { MemoryService } from '../memory.service';
 import { MediaType } from '../models/mediaType';
-import { invoke } from '@tauri-apps/api/core';
+import { TauriService } from '../services/tauri.service';
 import { ToastrService } from 'ngx-toastr';
 import { ErrorService } from '../error.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -26,7 +26,7 @@ import { RestreamModalComponent } from '../restream-modal/restream-modal.compone
 import { DownloadService } from '../download.service';
 import { Download } from '../models/download';
 import { Subscription, take } from 'rxjs';
-import { save } from '@tauri-apps/plugin-dialog';
+
 import { CHANNEL_EXTENSION, GROUP_EXTENSION, RECORD_EXTENSION } from '../models/extensions';
 import { getDateFormatted, getExtension, sanitizeFileName } from '../utils';
 import { NodeType, fromMediaType } from '../models/nodeType';
@@ -47,6 +47,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
     private el: ElementRef,
     private renderer: Renderer2,
     private download: DownloadService,
+    private tauri: TauriService,
   ) {}
   @Input() channel?: Channel;
   @Input() id!: number;
@@ -97,7 +98,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
 
     if (this.starting === true) {
       try {
-        await invoke('cancel_play', {
+        await this.tauri.call('cancel_play', {
           sourceId: this.channel?.source_id,
           channelId: this.channel?.id,
         });
@@ -137,7 +138,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
     }
     let file = undefined;
     if (record && (this.memory.IsContainer || this.memory.AlwaysAskSave)) {
-      file = await save({
+      file = await this.tauri.saveDialog({
         canCreateDirectories: true,
         title: 'Select where to save recording',
         defaultPath: `${sanitizeFileName(this.channel?.name!)}_${getDateFormatted()}${RECORD_EXTENSION}`,
@@ -147,11 +148,11 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
     this.starting = true;
     this.memory.SetFocus.next(this.id);
     try {
-      await invoke('play', { channel: this.channel, record: record, recordPath: file });
+      await this.tauri.call('play', { channel: this.channel, record: record, recordPath: file });
     } catch (e) {
       this.error.handleError(e);
     }
-    invoke('add_last_watched', { id: this.channel?.id }).catch((e) => {
+    this.tauri.call('add_last_watched', { id: this.channel?.id }).catch((e) => {
       console.error(e);
       this.error.handleError(e);
     });
@@ -184,7 +185,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
       msg = `Removed "${this.channel?.name}" from favorites`;
     }
     try {
-      await invoke(call, { channelId: this.channel!.id });
+      await this.tauri.call(call, { channelId: this.channel!.id });
       this.channel!.favorite = !wasFavorite;
       if (wasFavorite) {
         if (this.viewMode == ViewMode.Favorites) this.fade = true;
@@ -200,7 +201,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
 
   async removeFromHistory() {
     try {
-      await invoke('remove_from_history', { id: this.channel!.id });
+      await this.tauri.call('remove_from_history', { id: this.channel!.id });
       this.memory.Refresh.next(false);
       this.toastr.success(`Removed "${this.channel?.name}" from history`);
     } catch (e) {
@@ -220,7 +221,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
     const msg = `${action} ${type}"${this.channel?.name}"`;
 
     try {
-      await invoke(command, args);
+      await this.tauri.call(command, args);
       this.channel!.hidden = hide;
       this.fade = this.viewMode == ViewMode.Hidden ? !hide : hide;
       this.toastr.success(`${msg} (updates on reload)`);
@@ -260,7 +261,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
 
   async showEPGModal() {
     try {
-      let data: EPG[] = await invoke('get_epg', { channel: this.channel });
+      let data: EPG[] = await this.tauri.call('get_epg', { channel: this.channel });
       if (data.length == 0) {
         this.toastr.info('No EPG data for this channel');
         return;
@@ -322,7 +323,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
 
   async share() {
     let entityName = this.channel?.media_type == MediaType.group ? 'group' : 'channel';
-    let file = await save({
+    let file = await this.tauri.saveDialog({
       canCreateDirectories: true,
       title: `Select where to export ${entityName}`,
       defaultPath:
@@ -336,13 +337,13 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
       this.memory.tryIPC(
         `Successfully exported category to ${file}`,
         'Failed to export channel',
-        () => invoke('share_custom_group', { group: this.channel, path: file }),
+        () => this.tauri.call('share_custom_group', { group: this.channel, path: file }),
       );
     } else {
       this.memory.tryIPC(
         `Successfully exported channel to ${file}`,
         'Failed to export channel',
-        () => invoke('share_custom_channel', { channel: this.channel, path: file }),
+        () => this.tauri.call('share_custom_channel', { channel: this.channel, path: file }),
       );
     }
   }
@@ -354,7 +355,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
 
   async deleteGroup() {
     try {
-      if (await invoke('group_not_empty', { id: this.channel?.id })) {
+      if (await this.tauri.call('group_not_empty', { id: this.channel?.id })) {
         this.openDeleteGroupModal();
       } else await this.deleteGroupNoReplace();
     } catch (e) {
@@ -364,7 +365,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
 
   async deleteGroupNoReplace() {
     try {
-      await invoke('delete_custom_group', {
+      await this.tauri.call('delete_custom_group', {
         id: this.channel?.id,
         doChannelsUpdate: false,
       });
@@ -399,7 +400,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
 
   async deleteChannel() {
     await this.memory.tryIPC('Successfully deleted channel', 'Failed to delete channel', () =>
-      invoke('delete_custom_channel', { id: this.channel?.id }),
+      this.tauri.call('delete_custom_channel', { id: this.channel?.id }),
     );
     this.memory.Refresh.next(true);
   }
@@ -411,7 +412,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
   async downloadVod() {
     let file = undefined;
     if (this.memory.IsContainer || this.memory.AlwaysAskSave) {
-      file = await save({
+      file = await this.tauri.saveDialog({
         canCreateDirectories: true,
         title: 'Select where to download movie',
         defaultPath: `${sanitizeFileName(this.channel?.name!)}.${getExtension(this.channel?.url!)}`,

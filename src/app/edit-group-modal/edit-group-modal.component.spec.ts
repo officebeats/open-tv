@@ -4,6 +4,9 @@ import { ToastrModule } from 'ngx-toastr';
 import { FormsModule } from '@angular/forms';
 import { EditGroupModalComponent } from './edit-group-modal.component';
 import { GroupNameExistsValidator } from './validators/group-name-exists.directive';
+import { MemoryService } from '../memory.service';
+import { TauriService } from '../services/tauri.service';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 describe('EditGroupModalComponent', () => {
   let component: EditGroupModalComponent;
@@ -13,7 +16,12 @@ describe('EditGroupModalComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [EditGroupModalComponent, GroupNameExistsValidator],
       imports: [ToastrModule.forRoot(), FormsModule],
-      providers: [NgbActiveModal],
+      schemas: [CUSTOM_ELEMENTS_SCHEMA],
+      providers: [
+        NgbActiveModal,
+        { provide: MemoryService, useValue: { settings: {} } },
+        { provide: TauriService, useValue: { call: () => Promise.resolve([]) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EditGroupModalComponent);

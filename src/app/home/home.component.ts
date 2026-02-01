@@ -33,9 +33,7 @@ import { SourceType } from '../models/sourceType';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { ErrorService } from '../error.service';
 import { Settings } from '../models/settings';
-import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { SortType } from '../models/sortType';
-import { getVersion } from '@tauri-apps/api/app';
 
 import { LAST_SEEN_VERSION } from '../models/localStorage';
 
@@ -47,6 +45,8 @@ import { TauriService } from '../services/tauri.service';
 import { SettingsService } from '../services/settings.service';
 import { PlaylistService } from '../services/playlist.service';
 import { PlayerService } from '../services/player.service';
+import { HeaderComponent } from './components/header/header.component';
+import { PlayerComponent } from './components/player/player.component';
 
 @Component({
   selector: 'app-home',
@@ -86,6 +86,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   readonly viewModeEnum = ViewMode;
   bulkActionType = BulkActionType;
   readonly mediaTypeEnum = MediaType;
+  @ViewChild('header') header!: HeaderComponent;
+  @ViewChild('player') player!: PlayerComponent;
   @ViewChild('search') search!: ElementRef;
   shortcuts: ShortcutInput[] = [];
   selectionMode: boolean = false;
@@ -158,14 +160,14 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
         let settings = data[0] as Settings;
         let sources = data[1] as Source[];
         this.memory.settings = settings;
-        if (settings.zoom) getCurrentWebview().setZoom(Math.trunc(settings.zoom! * 100) / 10000);
+        if (settings.zoom) this.tauri.setZoom(Math.trunc(settings.zoom! * 100) / 10000);
         this.memory.trayEnabled = settings.enable_tray_icon ?? true;
         this.memory.AlwaysAskSave = settings.always_ask_save ?? false;
         this.memory.Sources = new Map(sources.filter((x) => x.enabled).map((s) => [s.id!, s]));
         if (sources.length == 0) {
           this.reset();
         } else {
-          getVersion().then((version) => {
+          this.tauri.getAppVersion().then((version) => {
             if (localStorage.getItem(LAST_SEEN_VERSION) != version) {
               this.memory.AppVersion = version;
               this.memory.updateVersion();
@@ -308,9 +310,22 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   clearSearch() {
-    this.search.nativeElement.value = '';
+    if (this.header) this.header.clearSearch();
     this.prevSearchValue = '';
     this.filters!.query = '';
+  }
+
+  onSearchChanged(term: string) {
+    this.focus = 0;
+    this.focusArea = FocusArea.Tiles;
+    if (this.channelsVisible && term != this.prevSearchValue) this.channelsVisible = false;
+    this.prevSearchValue = term;
+    this.filters!.query = term;
+    this.load();
+  }
+
+  onPlaybackStarted() {
+    this.onModalClose();
   }
 
   async loadMore() {
@@ -386,25 +401,6 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.addEvents().then((_) => _);
-    this.subscriptions.push(
-      fromEvent(this.search.nativeElement, 'keyup')
-        .pipe(
-          filter((event: any) => event.key !== 'Escape'),
-          map((event: any) => {
-            this.focus = 0;
-            this.focusArea = FocusArea.Tiles;
-            if (this.channelsVisible && event.target.value != this.prevSearchValue)
-              this.channelsVisible = false;
-            this.prevSearchValue = event.target.value;
-            return event.target.value;
-          }),
-          debounceTime(300),
-        )
-        .subscribe(async (term: string) => {
-          this.filters!.query = term;
-          await this.load();
-        }),
-    );
 
     this.shortcuts.push(
       {
@@ -533,17 +529,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   focusSearch() {
-    if (this.searchFocused()) {
-      this.selectFirstChannel();
-      return;
-    } else {
-      this.focus = 0;
-      this.focusArea = FocusArea.Tiles;
+    if (this.header) {
+      this.header.focusSearch();
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    this.search.nativeElement.focus({
-      preventScroll: true,
-    });
   }
 
   async goBackHotkey() {
@@ -917,16 +905,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.selectedChannelForModal = null;
   }
 
-  async onModalPlay() {
+  onModalPlay() {
     if (this.selectedChannelForModal) {
-      const channel = this.selectedChannelForModal;
-      this.onModalClose();
-      try {
-        await this.playerService.play(channel);
-        this.playerService.addLastWatched(channel.id!).catch(console.error);
-      } catch (e) {
-        this.error.handleError(e);
-      }
+      this.player.play(this.selectedChannelForModal);
     }
   }
 

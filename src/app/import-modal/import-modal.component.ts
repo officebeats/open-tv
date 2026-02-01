@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { open } from '@tauri-apps/plugin-dialog';
-import { invoke } from '@tauri-apps/api/core';
 import { MemoryService } from '../memory.service';
+import { TauriService } from '../services/tauri.service';
 
 @Component({
   selector: 'app-import-modal',
@@ -15,10 +14,11 @@ export class ImportModalComponent {
   constructor(
     public activeModal: NgbActiveModal,
     public memory: MemoryService,
+    private tauri: TauriService,
   ) {}
 
   async selectFile() {
-    const file = await open({
+    const file = await this.tauri.openDialog({
       multiple: false,
       directory: false,
       canCreateDirectories: false,
@@ -30,8 +30,21 @@ export class ImportModalComponent {
     }
     this.nameOverride = this.nameOverride?.trim();
     if (this.nameOverride == '') this.nameOverride = undefined;
-    let fail = await this.memory.tryIPC('Successfully imported file', 'Failed to import file', () =>
-      invoke('import', { sourceId: this.source_id, path: file, nameOverride: this.nameOverride }),
+    let fail = await this.memory.tryIPC(
+      'Successfully imported file',
+      'Failed to import file',
+      async () => {
+        let path = '';
+        if (typeof file === 'string') path = file;
+        else if (Array.isArray(file) && file.length > 0) path = file[0];
+
+        if (path)
+          await this.tauri.call('import', {
+            sourceId: this.source_id,
+            path: path,
+            nameOverride: this.nameOverride,
+          });
+      },
     );
     this.memory.RefreshSources.next(true);
     if (!fail) this.activeModal.close('close');

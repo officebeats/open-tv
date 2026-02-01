@@ -2,10 +2,9 @@ import { Component, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
-import { invoke } from '@tauri-apps/api/core';
+import { TauriService } from '../services/tauri.service';
 import { SourceType } from '../models/sourceType';
 import { Source } from '../models/source';
-import { open } from '@tauri-apps/plugin-dialog';
 import { ConfirmModalComponent } from './confirm-modal/confirm-modal.component';
 import { MemoryService } from '../memory.service';
 import { ErrorService } from '../error.service';
@@ -24,6 +23,7 @@ export class SetupComponent {
     public memory: MemoryService,
     private error: ErrorService,
     private modal: NgbModal,
+    private tauri: TauriService,
   ) {}
   loading = false;
   sourceTypeEnum = SourceType;
@@ -66,7 +66,7 @@ export class SetupComponent {
 
   async getM3U() {
     this.removeUnusedFieldsFromSource();
-    const file = await open({
+    const file = await this.tauri.openDialog({
       multiple: false,
       directory: false,
       filters: [{ name: 'extension', extensions: ['m3u', 'm3u8'] }],
@@ -75,9 +75,13 @@ export class SetupComponent {
       return;
     }
     this.loading = true;
-    this.source.url = file;
     try {
-      await invoke('get_m3u8', { source: this.source });
+      if (typeof file === 'string') {
+        this.source.url = file;
+      } else if (Array.isArray(file) && file.length > 0) {
+        this.source.url = file[0];
+      }
+      await this.tauri.call('get_m3u8', { source: this.source });
       this.success();
     } catch (e) {
       this.error.handleError(e, 'Could not parse selected file');
@@ -117,7 +121,7 @@ export class SetupComponent {
   }
 
   async customImport() {
-    const file = await open({
+    const file = await this.tauri.openDialog({
       multiple: false,
       directory: false,
       canCreateDirectories: false,
@@ -130,8 +134,14 @@ export class SetupComponent {
     let nameOverride = this.source.name?.trim();
     if (nameOverride == '') nameOverride = undefined;
     try {
-      await invoke('import', { path: file, nameOverride: nameOverride });
-      this.success();
+      let path = '';
+      if (typeof file === 'string') path = file;
+      else if (Array.isArray(file) && file.length > 0) path = file[0];
+
+      if (path) {
+        await this.tauri.call('import', { path: path, nameOverride: nameOverride });
+        this.success();
+      }
     } catch (e) {
       this.error.handleError(e, 'Invalid URL or credentials. Please try again');
     }
@@ -140,7 +150,7 @@ export class SetupComponent {
   async custom() {
     this.loading = true;
     try {
-      await invoke('add_custom_source', { name: this.source.name });
+      await this.tauri.call('add_custom_source', { name: this.source.name });
       this.success();
     } catch (e) {
       this.error.handleError(e, 'Invalid URL or credentials. Please try again');
@@ -153,7 +163,7 @@ export class SetupComponent {
     this.source.url = this.source.url?.trim();
     this.loading = true;
     try {
-      await invoke('get_m3u8_from_link', { source: this.source });
+      await this.tauri.call('get_m3u8_from_link', { source: this.source });
       this.success();
     } catch (e) {
       this.error.handleError(e, 'Invalid URL or credentials. Please try again');
@@ -183,7 +193,7 @@ export class SetupComponent {
       }
     }
     try {
-      await invoke('get_xtream', { source: this.source });
+      await this.tauri.call('get_xtream', { source: this.source });
       this.success();
     } catch (e) {
       this.error.handleError(e, 'Invalid URL or credentials. Please try again');

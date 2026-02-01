@@ -36,6 +36,10 @@ class MockMemoryService {
   tryIPC = async () => {};
 }
 
+import { HeaderComponent } from './components/header/header.component';
+import { SidebarComponent } from './components/sidebar/sidebar.component';
+import { PlayerComponent } from './components/player/player.component';
+
 describe('HomeComponent', () => {
   let component: HomeComponent;
   let fixture: ComponentFixture<HomeComponent>;
@@ -43,7 +47,7 @@ describe('HomeComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [HomeComponent],
+      declarations: [HomeComponent, HeaderComponent, SidebarComponent, PlayerComponent],
       imports: [
         MatMenuModule,
         FormsModule,
@@ -56,13 +60,27 @@ describe('HomeComponent', () => {
       providers: [
         { provide: MemoryService, useClass: MockMemoryService },
         { provide: Router, useValue: { navigateByUrl: () => {} } },
-        { provide: ToastrService, useValue: { success: () => {}, info: () => {} } },
+        {
+          provide: ToastrService,
+          useValue: { success: () => {}, info: () => {}, error: () => {} },
+        },
         { provide: ErrorService, useValue: { handleError: () => {} } },
         {
           provide: NgbModal,
           useValue: { open: () => ({ componentInstance: {}, result: Promise.resolve() }) },
         },
-        { provide: TauriService, useValue: { call: () => Promise.resolve([]) } },
+        {
+          provide: TauriService,
+          useValue: {
+            call: (cmd: string) => {
+              if (cmd === 'get_settings') return Promise.resolve({});
+              if (cmd === 'get_sources') return Promise.resolve([]);
+              return Promise.resolve([]);
+            },
+            getAppVersion: () => Promise.resolve('2.0.4'),
+            setZoom: () => Promise.resolve(),
+          },
+        },
         { provide: SettingsService, useValue: { updateSettings: () => Promise.resolve() } },
         {
           provide: PlaylistService,

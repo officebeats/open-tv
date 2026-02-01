@@ -1,29 +1,28 @@
-import { Component, Input, NgZone, OnDestroy } from "@angular/core";
-import { EPG } from "../../models/epg";
-import { MemoryService } from "../../memory.service";
-import { invoke } from "@tauri-apps/api/core";
-import { EPGNotify } from "../../models/epgNotify";
-import { ErrorService } from "../../error.service";
-import { Channel } from "../../models/channel";
-import { MediaType } from "../../models/mediaType";
-import { DownloadService } from "../../download.service";
-import { Subscription, take } from "rxjs";
-import { Download } from "../../models/download";
-import { save } from "@tauri-apps/plugin-dialog";
-import { getDateFormatted, getExtension, sanitizeFileName } from "../../utils";
+import { Component, Input, OnDestroy, AfterViewInit } from '@angular/core';
+import { EPG } from '../../models/epg';
+import { MemoryService } from '../../memory.service';
+import { EPGNotify } from '../../models/epgNotify';
+import { ErrorService } from '../../error.service';
+import { Channel } from '../../models/channel';
+import { MediaType } from '../../models/mediaType';
+import { DownloadService } from '../../download.service';
+import { Subscription, take } from 'rxjs';
+import { Download } from '../../models/download';
+import { TauriService } from '../../services/tauri.service';
+import { getDateFormatted, getExtension, sanitizeFileName } from '../../utils';
 
 @Component({
-  selector: "app-epg-modal-item",
-  templateUrl: "./epg-modal-item.component.html",
-  styleUrl: "./epg-modal-item.component.css",
+  selector: 'app-epg-modal-item',
+  templateUrl: './epg-modal-item.component.html',
+  styleUrl: './epg-modal-item.component.css',
 })
 export class EpgModalItemComponent implements OnDestroy {
   constructor(
     public memory: MemoryService,
     private error: ErrorService,
     private download: DownloadService,
-    private ngZone: NgZone,
-  ) { }
+    private tauri: TauriService,
+  ) {}
   @Input()
   epg?: EPG;
   @Input()
@@ -52,15 +51,15 @@ export class EpgModalItemComponent implements OnDestroy {
     this.memory.LoadingNotification = true;
     if (!this.notificationOn()) {
       try {
-        await invoke("add_epg", { epg: this.epg_to_epgNotify(this.epg!) });
-        this.error.success("Added notification successfully");
+        await this.tauri.call('add_epg', { epg: this.epg_to_epgNotify(this.epg!) });
+        this.error.success('Added notification successfully');
       } catch (e) {
         this.error.handleError(e);
       }
     } else {
       try {
-        await invoke("remove_epg", { epgId: this.epg?.epg_id });
-        this.error.success("Removed notification successfully");
+        await this.tauri.call('remove_epg', { epgId: this.epg?.epg_id });
+        this.error.success('Removed notification successfully');
       } catch (e) {
         this.error.handleError(e);
       }
@@ -91,7 +90,7 @@ export class EpgModalItemComponent implements OnDestroy {
       source_id: this.sourceId,
     };
     try {
-      await invoke("play", {
+      await this.tauri.call('play', {
         channel: channel,
         record: false,
       });
@@ -114,9 +113,9 @@ export class EpgModalItemComponent implements OnDestroy {
   async downloadTimeshift() {
     let file = undefined;
     if (this.memory.IsContainer || this.memory.AlwaysAskSave) {
-      file = await save({
+      file = await this.tauri.saveDialog({
         canCreateDirectories: true,
-        title: "Select where to save catchback",
+        title: 'Select where to save catchback',
         defaultPath: `${sanitizeFileName(this.epg?.title!)}_${getDateFormatted()}.${getExtension(this.epg?.timeshift_url!)}`,
       });
       if (!file) {
@@ -132,19 +131,14 @@ export class EpgModalItemComponent implements OnDestroy {
       favorite: false,
       source_id: this.sourceId,
     };
-    let download = await this.download.addDownload(
-      this.getDownloadId(),
-      channel,
-    );
+    let download = await this.download.addDownload(this.getDownloadId(), channel);
     this.downloadSubscribe(download);
     await this.download.download(download.id, file);
   }
 
   downloadSubscribe(download: Download) {
     let progressUpdate = download.progressUpdate.subscribe((progress) => {
-      this.ngZone.run(() => {
-        this.progress = Math.trunc(progress);
-      });
+      this.progress = Math.trunc(progress);
     });
     this.subscriptions.push(progressUpdate);
     this.subscriptions.push(

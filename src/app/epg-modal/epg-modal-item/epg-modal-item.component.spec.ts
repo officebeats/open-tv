@@ -3,6 +3,11 @@ import { ToastrModule } from 'ngx-toastr';
 import { NgbModalModule } from '@ng-bootstrap/ng-bootstrap';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { EpgModalItemComponent } from './epg-modal-item.component';
+import { MemoryService } from '../../memory.service';
+import { ErrorService } from '../../error.service';
+import { DownloadService } from '../../download.service';
+import { TauriService } from '../../services/tauri.service';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 describe('EpgModalItemComponent', () => {
   let component: EpgModalItemComponent;
@@ -12,6 +17,13 @@ describe('EpgModalItemComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [EpgModalItemComponent],
       imports: [ToastrModule.forRoot(), NgbModalModule, MatProgressBarModule],
+      schemas: [CUSTOM_ELEMENTS_SCHEMA],
+      providers: [
+        { provide: MemoryService, useValue: { settings: {}, Watched_epgs: new Set() } },
+        { provide: ErrorService, useValue: { handleError: () => {} } },
+        { provide: DownloadService, useValue: { Downloads: new Map() } },
+        { provide: TauriService, useValue: { call: () => Promise.resolve([]) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EpgModalItemComponent);

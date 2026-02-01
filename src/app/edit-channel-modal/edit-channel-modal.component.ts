@@ -2,8 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { NgbActiveModal, NgbTypeaheadSelectItemEvent } from '@ng-bootstrap/ng-bootstrap';
 import { CustomChannel } from '../models/customChannel';
 import { MediaType } from '../models/mediaType';
-import { Channel, invoke } from '@tauri-apps/api/core';
+
 import { MemoryService } from '../memory.service';
+import { TauriService } from '../services/tauri.service';
 import { ChannelHeaders } from '../models/channelHeaders';
 import {
   combineLatest,
@@ -42,7 +43,7 @@ export class EditChannelModalComponent implements OnInit {
       debounceTime(200),
       distinctUntilChanged(),
       switchMap((term) => {
-        let promise: Promise<IdName> = invoke('group_auto_complete', {
+        let promise: Promise<IdName> = this.tauri.call('group_auto_complete', {
           query: term,
           sourceId: this.channel.data.source_id,
         });
@@ -60,6 +61,7 @@ export class EditChannelModalComponent implements OnInit {
     public activeModal: NgbActiveModal,
     private memory: MemoryService,
     private error: ErrorService,
+    private tauri: TauriService,
   ) {}
 
   onNameChange(val: string) {
@@ -84,7 +86,7 @@ export class EditChannelModalComponent implements OnInit {
     if (this.editing === true) {
       this.loading = true;
       try {
-        const result = await invoke('get_custom_channel_extra_data', {
+        const result = await this.tauri.call('get_custom_channel_extra_data', {
           id: this.channel.data.id,
           groupId: this.channel.data.group_id,
         });
@@ -145,7 +147,7 @@ export class EditChannelModalComponent implements OnInit {
 
   async update_channel(channel: CustomChannel) {
     try {
-      await invoke('edit_custom_channel', { channel: channel });
+      await this.tauri.call('edit_custom_channel', { channel: channel });
       this.memory.Refresh.next(true);
       this.error.success('Successfully updated channel');
       this.activeModal.close('close');
@@ -163,7 +165,7 @@ export class EditChannelModalComponent implements OnInit {
     ) {
       return;
     }
-    this.channelExists = (await invoke('channel_exists', {
+    this.channelExists = (await this.tauri.call('channel_exists', {
       name: name,
       url: url,
       sourceId: this.channel.data.source_id,
@@ -172,7 +174,7 @@ export class EditChannelModalComponent implements OnInit {
 
   async add_channel(channel: CustomChannel) {
     try {
-      await invoke('add_custom_channel', { channel: channel });
+      await this.tauri.call('add_custom_channel', { channel: channel });
       this.memory.RefreshSources.next(true);
       this.error.success('Successfully added channel');
       this.activeModal.close('close');

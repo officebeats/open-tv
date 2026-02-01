@@ -1,13 +1,13 @@
-import { Component, OnInit } from "@angular/core";
-import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
-import { EPG } from "../models/epg";
-import { invoke } from "@tauri-apps/api/core";
-import { MemoryService } from "../memory.service";
+import { Component, OnInit } from '@angular/core';
+import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { EPG } from '../models/epg';
+import { MemoryService } from '../memory.service';
+import { TauriService } from '../services/tauri.service';
 
 @Component({
-  selector: "app-epg-modal",
-  templateUrl: "./epg-modal.component.html",
-  styleUrl: "./epg-modal.component.css",
+  selector: 'app-epg-modal',
+  templateUrl: './epg-modal.component.html',
+  styleUrl: './epg-modal.component.css',
 })
 export class EpgModalComponent implements OnInit {
   name?: string;
@@ -19,10 +19,11 @@ export class EpgModalComponent implements OnInit {
   constructor(
     public activeModal: NgbActiveModal,
     private memory: MemoryService,
-  ) { }
+    private tauri: TauriService,
+  ) {}
 
   ngOnInit() {
-    invoke("get_epg_ids").then((x) => {
+    this.tauri.call('get_epg_ids').then((x) => {
       let set = new Set(x as Array<string>);
       this.memory.Watched_epgs = set;
     });
@@ -31,11 +32,11 @@ export class EpgModalComponent implements OnInit {
 
   getFormattedDate() {
     return this.currentDate
-      .toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
+      .toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
       })
-      .replace(",", "");
+      .replace(',', '');
   }
 
   prev() {

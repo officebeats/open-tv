@@ -50,3 +50,4 @@ pub fn apply_gpu_fixes() {
 
 #[cfg(not(target_os = "linux"))]
 pub fn apply_gpu_fixes() {}
+ 

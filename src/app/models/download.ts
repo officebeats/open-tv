@@ -1,6 +1,6 @@
-import { UnlistenFn } from "@tauri-apps/api/event";
-import { Subject } from "rxjs";
-import { Channel } from "./channel";
+import { UnlistenFn } from '../services/tauri.service';
+import { Subject } from 'rxjs';
+import { Channel } from './channel';
 
 export class Download {
   id!: string;

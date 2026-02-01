@@ -20,7 +20,9 @@ First off, thank you for considering contributing to Beats TV! It's people like 
 2. If you've added code that should be tested, add tests.
 3. Ensure the test suite passes (`npm test`).
 4. Make sure your code lints.
-5. Issue that pull request!
+5. Use `TauriService` for all IPC and plugin logic. Do not import `@tauri-apps` directly in components.
+6. Favor modular components. The `HomeComponent` should remain orchestrator-only.
+7. Issue that pull request!
 
 ## Development Setup
 

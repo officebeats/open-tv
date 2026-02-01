@@ -40,6 +40,9 @@ import { BulkActionBarComponent } from './home/components/bulk-action-bar.compon
 import { BreadcrumbComponent } from './home/components/breadcrumb.component';
 
 import { TimeAgoPipe } from './pipes/time-ago.pipe';
+import { HeaderComponent } from './home/components/header/header.component';
+import { SidebarComponent } from './home/components/sidebar/sidebar.component';
+import { PlayerComponent } from './home/components/player/player.component';
 
 @NgModule({
   declarations: [
@@ -67,6 +70,9 @@ import { TimeAgoPipe } from './pipes/time-ago.pipe';
     SortButtonComponent,
     SortItemComponent,
     DownloadManagerComponent,
+    HeaderComponent,
+    SidebarComponent,
+    PlayerComponent,
   ],
   imports: [
     BrowserModule,

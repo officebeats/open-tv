@@ -22,10 +22,8 @@
 import { Component, ElementRef, HostListener, ViewChild, NgZone } from '@angular/core';
 import { debounceTime, distinctUntilChanged, fromEvent, map, Subscription } from 'rxjs';
 import { Settings } from '../models/settings';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { TauriService } from '../services/tauri.service';
 import { Router } from '@angular/router';
-import { open } from '@tauri-apps/plugin-dialog';
 import { Source } from '../models/source';
 import { MemoryService } from '../memory.service';
 import { ViewMode } from '../models/viewMode';
@@ -89,7 +87,7 @@ export class SettingsComponent {
     private toastr: ToastrService,
     public dialog: MatDialog,
     public error: ErrorService,
-    private ngZone: NgZone,
+    private tauri: TauriService,
   ) {
     this.checkDependencies();
     this.listenToInstallStatus();
@@ -130,7 +128,7 @@ export class SettingsComponent {
   }
 
   getSettings() {
-    invoke('get_settings').then((x) => {
+    this.tauri.call<Settings>('get_settings').then((x) => {
       this.settings = x as Settings;
       if (this.settings.use_stream_caching == undefined) this.settings.use_stream_caching = true;
       if (this.settings.default_view == undefined) this.settings.default_view = ViewMode.All;
@@ -154,9 +152,9 @@ export class SettingsComponent {
       } else {
         // Try to match stable or enhanced
         Promise.all([
-          invoke('get_mpv_preset', { preset: 'stable' }),
-          invoke('get_mpv_preset', { preset: 'enhanced' }),
-          invoke('get_mpv_preset', { preset: 'performance' }),
+          this.tauri.call('get_mpv_preset', { preset: 'stable' }),
+          this.tauri.call('get_mpv_preset', { preset: 'enhanced' }),
+          this.tauri.call('get_mpv_preset', { preset: 'performance' }),
         ]).then(([stable, enhanced, performance]) => {
           if (this.settings.mpv_params === stable) {
             this.selectedPreset = 'stable';
@@ -191,7 +189,7 @@ export class SettingsComponent {
   }
 
   getTags() {
-    invoke('detect_tags').then((tags) => {
+    this.tauri.call('detect_tags').then((tags) => {
       let t = tags as Tag[];
 
       this.tags = t.sort((a, b) => {
@@ -217,7 +215,7 @@ export class SettingsComponent {
     const visible = event.target.checked;
     tag.hidden_count = visible ? 0 : tag.count;
 
-    invoke('set_tag_visibility', { tag: tag.name, visible: visible }).then((count) => {
+    this.tauri.call('set_tag_visibility', { tag: tag.name, visible: visible }).then((count) => {
       this.toastr.success(`Updated visibility for ${count} channels`);
       this.getTags();
     });
@@ -252,7 +250,8 @@ export class SettingsComponent {
 
   bulkToggleTags(visible: boolean) {
     const tagNames = this.filteredTags.map((t) => t.name);
-    invoke('set_bulk_tag_visibility', { tags: tagNames, visible: visible })
+    this.tauri
+      .call('set_bulk_tag_visibility', { tags: tagNames, visible: visible })
       .then((count) => {
         this.toastr.success(`Updated visibility for ${count} tags`);
         this.getTags();
@@ -260,7 +259,7 @@ export class SettingsComponent {
       .catch((e) => {
         console.error('Bulk update failed, trying individual', e);
         tagNames.forEach((name) => {
-          invoke('set_tag_visibility', { tag: name, visible: visible });
+          this.tauri.call('set_tag_visibility', { tag: name, visible: visible });
         });
         this.getTags();
       });
@@ -276,7 +275,7 @@ export class SettingsComponent {
   ];
 
   getSources() {
-    invoke('get_sources').then((x) => {
+    this.tauri.call('get_sources').then((x) => {
       this.sources = x as Source[];
       if (this.sources.length == 0) {
         this.memory.AddingAdditionalSource = false;
@@ -333,7 +332,7 @@ export class SettingsComponent {
         this.memory.RefreshPercent = 0;
 
         try {
-          await invoke('refresh_source', { source: source });
+          await this.tauri.call('refresh_source', { source: source });
         } catch (e) {
           console.error(`Failed to refresh source ${source.name}:`, e);
         }
@@ -360,7 +359,7 @@ export class SettingsComponent {
   async updateSettings() {
     this.settings.mpv_params = this.settings.mpv_params?.trim();
     if (this.settings.mpv_params == '') this.settings.mpv_params = undefined;
-    await invoke('update_settings', { settings: this.settings });
+    await this.tauri.call('update_settings', { settings: this.settings });
     this.toastr.success('Settings saved', '', {
       timeOut: 1000,
       positionClass: 'toast-bottom-right',
@@ -368,13 +367,17 @@ export class SettingsComponent {
   }
 
   async selectFolder() {
-    const folder = await open({
+    const folder = await this.tauri.openDialog({
       multiple: false,
       directory: true,
       canCreateDirectories: true,
     });
     if (folder) {
-      this.settings.recording_path = folder;
+      if (typeof folder === 'string') {
+        this.settings.recording_path = folder;
+      } else if (Array.isArray(folder) && folder.length > 0) {
+        this.settings.recording_path = folder[0];
+      }
       await this.updateSettings();
     }
   }
@@ -394,7 +397,7 @@ export class SettingsComponent {
       'History cleared successfully',
       'Failed to clear history',
       async () => {
-        await invoke('clear_history');
+        await this.tauri.call('clear_history');
       },
     );
   }
@@ -402,14 +405,14 @@ export class SettingsComponent {
   async applyPreset() {
     if (this.selectedPreset === 'custom') return;
 
-    invoke('get_mpv_preset', { preset: this.selectedPreset }).then((params) => {
+    this.tauri.call('get_mpv_preset', { preset: this.selectedPreset }).then((params) => {
       this.settings.mpv_params = params as string;
       this.updateSettings();
     });
   }
 
   async checkDependencies() {
-    this.dependencyResult = await invoke('check_dependencies');
+    this.dependencyResult = await this.tauri.call('check_dependencies');
   }
 
   async installDependency(name: string) {
@@ -417,7 +420,7 @@ export class SettingsComponent {
 
     this.installingMap.set(name, true);
     try {
-      await invoke('auto_install_dependency', { name });
+      await this.tauri.call('auto_install_dependency', { name });
       await this.checkDependencies();
       this.toastr.success(`${name} installed successfully!`, 'Success');
     } catch (error) {
@@ -429,10 +432,8 @@ export class SettingsComponent {
   }
 
   private async listenToInstallStatus() {
-    const unlisten = await listen('install-status', (event: any) => {
-      this.ngZone.run(() => {
-        this.installStatus = event.payload;
-      });
+    const unlisten = await this.tauri.on('install-status', (payload: any) => {
+      this.installStatus = payload;
     });
     this.subscriptions.push({ unsubscribe: () => unlisten() } as any);
   }

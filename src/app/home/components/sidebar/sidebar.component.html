@@ -1,0 +1,68 @@
+<aside class="sidebar glass-effect">
+  <div class="sidebar-header">
+    <h2 class="sidebar-title">Library</h2>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <h3 class="section-label">Navigation</h3>
+      <button
+        (click)="switchMode(viewModeEnum.All)"
+        class="nav-item"
+        [class.active]="currentViewType === viewModeEnum.All"
+      >
+        <span class="nav-icon">📁</span>
+        <span>All</span>
+      </button>
+      <button
+        (click)="switchMode(viewModeEnum.Categories)"
+        class="nav-item"
+        [class.active]="currentViewType === viewModeEnum.Categories"
+      >
+        <span class="nav-icon">🍱</span>
+        <span>Categories</span>
+      </button>
+      <button
+        (click)="switchMode(viewModeEnum.Favorites)"
+        class="nav-item"
+        [class.active]="currentViewType === viewModeEnum.Favorites"
+      >
+        <span class="nav-icon">❤️</span>
+        <span>Favorites</span>
+      </button>
+      <button
+        (click)="switchMode(viewModeEnum.History)"
+        class="nav-item"
+        [class.active]="currentViewType === viewModeEnum.History"
+      >
+        <span class="nav-icon">🕙</span>
+        <span>History</span>
+      </button>
+    </div>
+
+    <div class="nav-section">
+      <h3 class="section-label">Media Types</h3>
+      <div class="media-switches">
+        <label class="switch-item" [class.active]="chkLiveStream">
+          <input type="checkbox" [checked]="chkLiveStream" (change)="toggleMediaType(1)" />
+          <span class="dot live"></span>
+          <span class="switch-label">Live TV</span>
+        </label>
+        <label class="switch-item" [class.active]="chkMovie">
+          <input type="checkbox" [checked]="chkMovie" (change)="toggleMediaType(2)" />
+          <span class="dot movie"></span>
+          <span class="switch-label">Movies</span>
+        </label>
+        <label class="switch-item" [class.active]="chkSerie" *ngIf="showSeries">
+          <input type="checkbox" [checked]="chkSerie" (change)="toggleMediaType(3)" />
+          <span class="dot series"></span>
+          <span class="switch-label">Series</span>
+        </label>
+      </div>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="copyright">© 2026 Beats TV Team</div>
+  </div>
+</aside>
