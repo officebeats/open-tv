@@ -75,14 +75,14 @@ body:not(.theme-smooth-glass) .app-container::before {
 }
 
 /* 2 Columns: Medium Windows */
-@media (min-width: 1000px) {
+@media (min-width: 850px) {
   .channels-container.list-view {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 /* 3 Columns: Large Windows */
-@media (min-width: 1450px) {
+@media (min-width: 1250px) {
   .channels-container.list-view {
     grid-template-columns: repeat(3, 1fr);
   }

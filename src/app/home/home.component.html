@@ -7,106 +7,111 @@
   (playbackStarted)="onPlaybackStarted()"
 ></app-player>
 
-<!-- Sidebar (Left, Persistent, Full Height) -->
-<div class="main-wrapper">
-  <app-sidebar
-    class="full-height-sidebar"
-    [currentViewType]="filters?.view_type || viewModeEnum.All"
-    [chkLiveStream]="chkLiveStream"
-    [chkMovie]="chkMovie"
-    [chkSerie]="chkSerie"
-    [showSeries]="anyXtream()"
-    (viewModeChanged)="switchMode($event)"
-    (mediaTypeToggled)="updateMediaTypes($event)"
-  ></app-sidebar>
+<div class="app-layout">
+  <div class="main-wrapper">
+    <!-- Sidebar (Left, Persistent, Full Height) -->
+    <app-sidebar
+      class="full-height-sidebar"
+      [currentViewType]="filters?.view_type || viewModeEnum.All"
+      [chkLiveStream]="chkLiveStream"
+      [chkMovie]="chkMovie"
+      [chkSerie]="chkSerie"
+      [showSeries]="anyXtream()"
+      (viewModeChanged)="switchMode($event)"
+      (mediaTypeToggled)="updateMediaTypes($event)"
+    ></app-sidebar>
 
-  <!-- Content Area (Right, Header + Scrollable content) -->
-  <div class="content-container">
-    <!-- Top Header (Now inside content area to prevent sidebar overlap) -->
-    <app-header
-      #header
-      [selectedCount]="selectedChannels.size"
-      [selectionMode]="selectionMode"
-      [bulkDisabled]="!!filters?.series_id && !filters?.season"
-      [bulkMenu]="bulkMenu"
-      [loading]="loading"
-      (toggleSelectionMode)="toggleSelectionMode()"
-      (clearSelection)="clearSelection()"
-      (openSettings)="openSettings()"
-      (reloadRequested)="reload()"
-      (searchChanged)="onSearchChanged($event)"
-    ></app-header>
+    <!-- Content Area (Right, Header + Scrollable content) -->
+    <div class="content-container">
+      <!-- Top Header (Now inside content area to prevent sidebar overlap) -->
+      <app-header
+        #header
+        [selectedCount]="selectedChannels.size"
+        [selectionMode]="selectionMode"
+        [bulkDisabled]="!!filters?.series_id && !filters?.season"
+        [bulkMenu]="bulkMenu"
+        [loading]="loading"
+        (toggleSelectionMode)="toggleSelectionMode()"
+        (clearSelection)="clearSelection()"
+        (openSettings)="openSettings()"
+        (reloadRequested)="reload()"
+        (searchChanged)="onSearchChanged($event)"
+      ></app-header>
 
-    <!-- Sticky Bulk Actions Bar -->
-    <app-bulk-action-bar
-      [visible]="selectedChannels.size > 0"
-      (action)="bulkActionFromBar($event)"
-      (cancel)="clearSelection()"
-    ></app-bulk-action-bar>
+      <!-- Sticky Bulk Actions Bar -->
+      <app-bulk-action-bar
+        [visible]="selectedChannels.size > 0"
+        (action)="bulkActionFromBar($event)"
+        (cancel)="clearSelection()"
+      ></app-bulk-action-bar>
 
-    <app-breadcrumb
-      [visible]="
-        (!!filters?.view_type == !!viewModeEnum.Categories && !!filters?.group_id) ||
-        !!filters?.series_id
-      "
-      [text]="nodeStack.get()?.toString() || ''"
-      (back)="goBack()"
-    ></app-breadcrumb>
+      <app-breadcrumb
+        [visible]="
+          (!!filters?.view_type == !!viewModeEnum.Categories && !!filters?.group_id) ||
+          !!filters?.series_id
+        "
+        [text]="nodeStack.get()?.toString() || ''"
+        (back)="goBack()"
+      ></app-breadcrumb>
 
-    <!-- Selection Actions Bar (Compact version) -->
-    <div *ngIf="selectionMode" class="selection-bar-overlay" @fadeInOut>
-      <button class="btn-action" (click)="selectAllView()">Select All</button>
-      <ng-container *ngIf="selectedChannels.size > 0">
-        <button class="btn-action btn-hide" (click)="bulkActionOnSelected(bulkActionType.Hide)">
-          Hide
-        </button>
-        <button class="btn-action btn-show" (click)="bulkActionOnSelected(bulkActionType.Unhide)">
-          Unhide
-        </button>
-        <button class="btn-action btn-fav" (click)="bulkActionOnSelected(bulkActionType.Favorite)">
-          Favorite
-        </button>
-        <button
-          class="btn-action btn-whitelist"
-          (click)="whitelistSelected()"
-          [ngbTooltip]="'Keep only selected visible'"
-        >
-          Whitelist
-        </button>
-      </ng-container>
-    </div>
-
-    <main class="content-grid">
-      <div class="channels-container list-view" [@fade]="channelsVisible ? 'visible' : 'hidden'">
-        <app-channel-tile
-          [attr.id]="i == 0 ? 'first' : null"
-          *ngFor="let channel of channels; let i = index"
-          class="channel-item"
-          [id]="i"
-          [channel]="channel"
-          [viewMode]="viewType"
-          [threeLines]="false"
-          [compact]="true"
-          [selectionMode]="selectionMode"
-          [selected]="selectedChannels.has(channel.id!)"
-          (selectionToggled)="toggleChannelSelection($event)"
-          (requestDetails)="openDetails($event)"
-        ></app-channel-tile>
+      <!-- Selection Actions Bar (Compact version) -->
+      <div *ngIf="selectionMode" class="selection-bar-overlay" @fadeInOut>
+        <button class="btn-action" (click)="selectAllView()">Select All</button>
+        <ng-container *ngIf="selectedChannels.size > 0">
+          <button class="btn-action btn-hide" (click)="bulkActionOnSelected(bulkActionType.Hide)">
+            Hide
+          </button>
+          <button class="btn-action btn-show" (click)="bulkActionOnSelected(bulkActionType.Unhide)">
+            Unhide
+          </button>
+          <button
+            class="btn-action btn-fav"
+            (click)="bulkActionOnSelected(bulkActionType.Favorite)"
+          >
+            Favorite
+          </button>
+          <button
+            class="btn-action btn-whitelist"
+            (click)="whitelistSelected()"
+            [ngbTooltip]="'Keep only selected visible'"
+          >
+            Whitelist
+          </button>
+        </ng-container>
       </div>
 
-      <!-- Load More Button -->
-      <button
-        *ngIf="!reachedMax"
-        (click)="loadMore()"
-        class="load-more-btn"
-        [@fade]="channelsVisible ? 'visible' : 'hidden'"
-      >
-        <span>Load More</span>
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
-        </svg>
-      </button>
-    </main>
+      <main class="content-grid">
+        <div class="channels-container list-view" [@fade]="channelsVisible ? 'visible' : 'hidden'">
+          <app-channel-tile
+            [attr.id]="i == 0 ? 'first' : null"
+            *ngFor="let channel of channels; let i = index"
+            class="channel-item"
+            [id]="i"
+            [channel]="channel"
+            [viewMode]="viewType"
+            [threeLines]="false"
+            [compact]="true"
+            [selectionMode]="selectionMode"
+            [selected]="selectedChannels.has(channel.id!)"
+            (selectionToggled)="toggleChannelSelection($event)"
+            (requestDetails)="openDetails($event)"
+          ></app-channel-tile>
+        </div>
+
+        <!-- Load More Button -->
+        <button
+          *ngIf="!reachedMax"
+          (click)="loadMore()"
+          class="load-more-btn"
+          [@fade]="channelsVisible ? 'visible' : 'hidden'"
+        >
+          <span>Load More</span>
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
+          </svg>
+        </button>
+      </main>
+    </div>
   </div>
 </div>
 
@@ -124,14 +129,14 @@
   <button
     mat-menu-item
     (click)="bulkAction(bulkActionType.Favorite)"
-    [disabled]="filters?.view_type == viewModeEnum.Categories"
+    [disabled]="filters?.view_type == viewModeEnum.All"
   >
     Favorite all
   </button>
   <button
     mat-menu-item
     (click)="bulkAction(bulkActionType.Unfavorite)"
-    [disabled]="filters?.view_type == viewModeEnum.Categories"
+    [disabled]="filters?.view_type == viewModeEnum.All"
   >
     Unfavorite all
   </button>

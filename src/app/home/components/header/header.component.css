@@ -198,6 +198,7 @@
 .settings-btn svg {
   width: 22px;
   height: 22px;
+  pointer-events: none;
 }
 
 @media (max-width: 900px) {

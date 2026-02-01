@@ -333,8 +333,8 @@ body.theme-smooth-glass {
   --beats-dark-gray: #121212;
   --beats-charcoal: #1c1c1e;
 
-  /* Apple Glass Background Override */
-  --app-bg: linear-gradient(135deg, #1c1c1e 0%, #000000 100%);
+  /* Apple Glass Background Override - Pure Silk Wallpaper */
+  --app-bg: url("./assets/app_wallpaper.png");
 
   /* Apple Glass Colors - Premium Depth */
   --beats-surface: rgba(25, 25, 30, 0.45);
@@ -378,11 +378,11 @@ body.theme-smooth-glass .app-header {
 body.theme-smooth-glass .channel {
   background: linear-gradient(
     180deg,
-    rgba(15, 15, 20, 0.85) 0%,
-    rgba(5, 5, 8, 0.95) 100%
+    rgba(10, 10, 15, 0.65) 0%,
+    rgba(5, 5, 10, 0.75) 100%
   ) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
 }
 
 body.theme-smooth-glass .source,
@@ -501,6 +501,14 @@ body.theme-smooth-glass .app-title {
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   text-shadow: 0 10px 30px rgba(0, 122, 255, 0.3);
+}
+
+/* Sidebar Glass Override */
+body.theme-smooth-glass .sidebar {
+  background: rgba(0, 0, 0, 0.15) !important; /* Ultra-transparent dark frost */
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Theme 2: Matrix Terminal */
