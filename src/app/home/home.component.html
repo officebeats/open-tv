@@ -36,6 +36,7 @@
         (openSettings)="openSettings()"
         (reloadRequested)="reload()"
         (searchChanged)="onSearchChanged($event)"
+        (openCategoryManager)="openCategoryManager()"
       ></app-header>
 
       <!-- Sticky Bulk Actions Bar -->
@@ -89,8 +90,8 @@
             [id]="i"
             [channel]="channel"
             [viewMode]="viewType"
-            [threeLines]="false"
-            [compact]="true"
+            [threeLines]="true"
+            [compact]="false"
             [selectionMode]="selectionMode"
             [selected]="selectedChannels.has(channel.id!)"
             (selectionToggled)="toggleChannelSelection($event)"

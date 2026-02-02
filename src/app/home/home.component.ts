@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { AllowIn, ShortcutInput } from 'ng-keyboard-shortcuts';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import {
   Subscription,
   debounceTime,
@@ -47,6 +48,8 @@ import { PlaylistService } from '../services/playlist.service';
 import { PlayerService } from '../services/player.service';
 import { HeaderComponent } from './components/header/header.component';
 import { PlayerComponent } from './components/player/player.component';
+import { FilterService } from '../services/filter.service';
+import { CategoryManagerModalComponent } from './components/category-manager-modal/category-manager-modal.component';
 
 @Component({
   selector: 'app-home',
@@ -110,7 +113,6 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   showScrollTop = false;
 
   // New UI Properties
-  // New UI Properties
   filterChips: FilterChip[] = [
     { id: 'live', label: 'Live TV', active: true, type: 'media', value: MediaType.livestream },
     { id: 'movies', label: 'Movies', active: false, type: 'media', value: MediaType.movie },
@@ -134,8 +136,27 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     private settingsService: SettingsService,
     private playlistService: PlaylistService,
     private playerService: PlayerService,
+    public filterService: FilterService,
+    private modalService: NgbModal,
   ) {
     this.getSources();
+  }
+
+  openCategoryManager() {
+    const modalRef = this.modalService.open(CategoryManagerModalComponent, {
+      size: 'xl',
+      backdrop: 'static',
+      keyboard: true,
+      windowClass: 'premium-modal',
+    });
+
+    modalRef.result
+      .then((result) => {
+        if (result === true) {
+          this.reload();
+        }
+      })
+      .catch(() => {});
   }
 
   bulkActionFromBar(action: string) {
@@ -195,6 +216,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
             page: 1,
             use_keywords: false,
             sort: SortType.provider,
+            show_hidden: false,
           };
           if (settings.default_sort != undefined && settings.default_sort != SortType.provider) {
             this.memory.Sort.next([settings.default_sort, false]);
@@ -339,6 +361,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     } else {
       this.filters!.page = 1;
     }
+    this.filters!.show_hidden = false;
     try {
       let channels: Channel[] = await this.tauri.call<Channel[]>('search', {
         filters: this.filters,
@@ -363,12 +386,33 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       }
 
       if (!more) {
-        this.channels = channels;
+        let processedChannels = channels;
+
+        // --- SMART CATEGORY SORTING ---
+        // If we are looking at the Categories list, bump US/ENGLISH/UK to the top
+        if (this.filters!.view_type === this.viewModeEnum.Categories && !this.filters!.query) {
+          processedChannels = [...channels].sort((a, b) => {
+            const nameA = (a.name || '').toUpperCase();
+            const nameB = (b.name || '').toUpperCase();
+
+            const priorityRegex = /(USA|US|UK|ENGLISH|ENGLAND|BRITISH)/;
+            const aIsPriority = priorityRegex.test(nameA);
+            const bIsPriority = priorityRegex.test(nameB);
+
+            if (aIsPriority && !bIsPriority) return -1;
+            if (!aIsPriority && bIsPriority) return 1;
+            return nameA.localeCompare(nameB);
+          });
+        }
+
+        this.channels = processedChannels.filter((c) => this.filterService.isChannelVisible(c));
         this.channelsVisible = true;
         // prevent flicker of hiding opacity
         this.viewType = this.filters!.view_type;
       } else {
-        this.channels = this.channels.concat(channels);
+        this.channels = this.channels.concat(
+          channels.filter((c) => this.filterService.isChannelVisible(c)),
+        );
       }
       this.reachedMax = channels.length < this.PAGE_SIZE;
     } catch (e) {
@@ -511,6 +555,15 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.chkLiveStream = this.filters!.media_types.includes(MediaType.livestream);
     this.chkMovie = this.filters!.media_types.includes(MediaType.movie);
     this.chkSerie = this.filters!.media_types.includes(MediaType.serie);
+
+    // Default sorting for movies: newest first
+    if (this.chkMovie && !this.chkLiveStream && !this.chkSerie) {
+      this.filters!.sort = SortType.dateDescending;
+    } else {
+      // Revert to default sort if not strictly movies
+      const settings = this.memory.settings;
+      this.filters!.sort = settings.default_sort ?? SortType.provider;
+    }
 
     this.load();
   }
