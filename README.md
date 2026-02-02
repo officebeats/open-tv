@@ -104,4 +104,12 @@ Interested in the future of AI coding, product management, or just want to suppo
 
 ---
 
+## ⚖️ Disclaimer
+
+**Beats TV does not provide, host, or stream any content.** This application is strictly a media player client for existing IPTV playlists that users already possess. We do not have any affiliation with third-party content providers.
+
+If you are seeking IPTV playlists to use with this application, it is your responsibility to research and source them legally. Users often search for providers like **[MegaOTT](https://www.z2u.com/mega-ott-iptv/accounts-5-33775?category_son_id=11579)** or **[Trex IPTV](https://www.g2g.com/categories/trex-iptv-accounts?q=12%20months)** on platforms like **G2G** or **Z2U** to find accounts that suit their needs. Beats TV is not responsible for the legality, quality, or reliability of any external playlists or services.
+
+---
+
 If you love this open-source IPTV client and want to see more vibe-coded features, please consider supporting the project!
