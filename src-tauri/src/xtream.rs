@@ -25,7 +25,7 @@ use crate::{
     log, media_type,
     sql::{self, insert_season},
 };
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use chrono::{DateTime, Local, NaiveDateTime};
@@ -261,7 +261,7 @@ pub async fn get_xtream<R: tauri::Runtime>(app: &tauri::AppHandle<R>, mut source
 
     if fail_count > 2 {
         let _ = tx.rollback();
-        return Err(anyhow::anyhow!(last_error));
+        return Err(anyhow!(last_error));
     }
     if wipe {
         sql::restore_preserve(&tx, source.id.context("no source id")?, channel_preserve)?;
@@ -749,7 +749,7 @@ fn xtream_epg_to_epg(epg: XtreamEPGItem, url: &Url, stream_id: &str) -> Result<E
 fn get_timeshift_url_base(source: &Source) -> Result<Url> {
     let mut url = Url::parse(source.url_origin.as_ref().context("no origin")?)?;
     url.path_segments_mut()
-        .map_err(|_| anyhow::anyhow!("Can't mutate url"))?
+        .map_err(|_| anyhow!("Can't mutate url"))?
         .extend(&["streaming", "timeshift.php"]);
     url.query_pairs_mut()
         .append_pair("username", source.username.as_ref().context("no username")?)

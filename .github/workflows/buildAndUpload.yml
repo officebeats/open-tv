@@ -99,7 +99,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Setup pnpm
+      - name: Fix git safe directory
+        run: git config --global --add safe.directory ${{ github.workspace }}
+
+      - name: setup node
         uses: pnpm/action-setup@v4
 
       - name: Install deps linux
