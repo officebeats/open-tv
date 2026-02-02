@@ -380,6 +380,7 @@ async fn download_and_extract(app: AppHandle, display_name: &str, url: &str, dep
     Ok(())
 }
 
+#[cfg(target_os = "windows")]
 async fn download_file(app: AppHandle, display_name: &str, url: &str, dest: &Path) -> Result<()> {
     let client = reqwest::Client::new();
     let response = client.get(url).send().await?;

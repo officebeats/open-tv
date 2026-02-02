@@ -50,6 +50,7 @@ use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use which::which;
 
+#[cfg(target_os = "macos")]
 const MACOS_POTENTIAL_PATHS: [&str; 3] = [
     "/opt/local/bin",    // MacPorts
     "/opt/homebrew/bin", // Homebrew on AARCH64 Mac
@@ -90,6 +91,38 @@ pub async fn refresh_source<R: tauri::Runtime>(app: &tauri::AppHandle<R>, source
     }
     if let Some(id) = id {
         sql::update_source_last_updated(id)?;
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+pub async fn download_file(app: AppHandle, display_name: &str, url: &str, dest: &Path) -> Result<()> {
+    let client = Client::new();
+    let mut response = client.get(url).send().await?;
+    let total_size = response.content_length().unwrap_or(0);
+    let mut downloaded = 0;
+    let mut file = tokio::fs::File::create(dest).await?;
+    let mut send_threshold: f64 = 0.1;
+
+    if !response.status().is_success() {
+        let error = response.status();
+        anyhow::bail!("Failed to download {}: HTTP {error}", display_name)
+    }
+
+    while let Some(chunk) = response.chunk().await? {
+        file.write_all(&chunk).await?;
+        downloaded += chunk.len() as u64;
+        if total_size > 0 {
+            let progress: f64 = (downloaded as f64 / total_size as f64) * 100.0;
+            let progress = (progress * 10.0).trunc() / 10.0;
+            if progress > send_threshold {
+                let _ = app.emit("download-progress", serde_json::json!({
+                    "name": display_name,
+                    "percent": progress
+                }));
+                send_threshold = progress + 0.1;
+            }
+        }
     }
     Ok(())
 }
@@ -308,9 +341,13 @@ fn get_download_path(file_name: String) -> Result<String> {
 pub fn get_bin(bin: &str) -> String {
     if OS == "linux" || which(bin).is_ok() {
         return bin.to_string();
-    } else if OS == "macos" {
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
         return find_macos_bin(bin);
     }
+    
     return get_bin_from_deps(bin);
 }
 
@@ -322,6 +359,7 @@ fn get_bin_from_deps(bin: &str) -> String {
     return path.to_string_lossy().to_string();
 }
 
+#[cfg(target_os = "macos")]
 pub fn find_macos_bin(bin: &str) -> String {
     return MACOS_POTENTIAL_PATHS
         .iter()

@@ -21,7 +21,9 @@
 
 use crate::settings::get_default_record_path;
 use crate::types::{AppState, ChannelHttpHeaders, Source};
-use crate::utils::{find_macos_bin, get_bin};
+#[cfg(target_os = "macos")]
+use crate::utils::find_macos_bin;
+use crate::utils::get_bin;
 use crate::{log, sql};
 use crate::{media_type, settings::get_settings, types::Channel};
 use anyhow::{Context, Result};
@@ -60,7 +62,10 @@ const YTDLP_BIN_NAME: &str = "yt-dlp";
 const HTTP_ORIGIN: &str = "origin:";
 const HTTP_REFERRER: &str = "referer:";
 static MPV_PATH: LazyLock<String> = LazyLock::new(|| get_bin(MPV_BIN_NAME));
+#[cfg(target_os = "macos")]
 static YTDLP_PATH: LazyLock<String> = LazyLock::new(|| find_macos_bin(YTDLP_BIN_NAME));
+#[cfg(not(target_os = "macos"))]
+static YTDLP_PATH: LazyLock<String> = LazyLock::new(|| get_bin(YTDLP_BIN_NAME));
 
 pub async fn play(
     channel: Channel,
