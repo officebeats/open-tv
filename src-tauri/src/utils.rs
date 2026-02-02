@@ -28,7 +28,7 @@ use crate::{
     types::Source,
     xtream,
 };
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Context, Result};
 use chrono::{DateTime, Local, Utc};
 use directories::ProjectDirs;
 use indexmap::IndexMap;
@@ -86,7 +86,7 @@ pub async fn refresh_source<R: tauri::Runtime>(app: &tauri::AppHandle<R>, source
             xtream::get_xtream(app, source, true).await?
         },
         source_type::CUSTOM => {}
-        _ => return Err(anyhow!("invalid source_type")),
+        _ => return Err(anyhow::anyhow!("invalid source_type")),
     }
     if let Some(id) = id {
         sql::update_source_last_updated(id)?;
@@ -163,7 +163,7 @@ pub async fn download(
     // Validate URL scheme - only allow http:// and https:// (case-insensitive)
     let url_lower = url.to_lowercase();
     if !url_lower.starts_with("http://") && !url_lower.starts_with("https://") {
-        bail!("Invalid URL scheme: only http:// and https:// are allowed");
+        anyhow::bail!("Invalid URL scheme: only http:// and https:// are allowed");
     }
     
     let name = channel.name.clone();
@@ -178,7 +178,7 @@ pub async fn download(
     let mut send_threshold: f64 = 0.1;
     if !response.status().is_success() {
         let error = response.status();
-        bail!("Failed to download movie: HTTP {error}")
+        anyhow::bail!("Failed to download movie: HTTP {error}")
     }
 
     let result: Result<()> = loop {
@@ -204,7 +204,7 @@ pub async fn download(
                }
           }
           _ = token.cancelled() => {
-               break Err(anyhow!("download aborted"));
+               break Err(anyhow::anyhow!("download aborted"));
           }
         }
     };
@@ -217,7 +217,7 @@ pub async fn download(
         if e.to_string() == "download aborted" {
             drop(file);
             let _ = tokio::fs::remove_file(path).await;
-            bail!("download aborted");
+            anyhow::bail!("download aborted");
         }
     }
     result

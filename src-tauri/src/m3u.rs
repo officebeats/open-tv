@@ -27,7 +27,7 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use regex::{Captures, Regex};
 use rusqlite::Transaction;
 use types::{Channel, Source};
@@ -214,7 +214,7 @@ pub async fn get_m3u8_from_link(source: Source, wipe: bool) -> Result<()> {
             "Failed to get m3u8 from link, status: {}",
             response.status()
         ));
-        bail!(
+        anyhow::bail!(
             "Failed to get m3u8 from link, status: {}",
             response.status()
         );
@@ -275,7 +275,7 @@ fn get_channel_from_lines(
 ) -> Result<Channel> {
     second = second.trim().to_string();
     if second.is_empty() {
-        bail!("second line is empty");
+        anyhow::bail!("second line is empty");
     }
     let name = NAME_REGEX
         .captures(&first)

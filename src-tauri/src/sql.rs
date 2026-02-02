@@ -32,7 +32,7 @@ use crate::{
     types::{Channel, ChannelHttpHeaders, Filters, Source},
     view_type,
 };
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
 use directories::ProjectDirs;
 use r2d2::{Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
@@ -766,7 +766,7 @@ fn get_action_params(action: u8) -> Result<(&'static str, u8)> {
         bulk_action_type::UNHIDE => Ok((bulk_action_type::FIELD_HIDDEN, 0)),
         bulk_action_type::FAVORITE => Ok((bulk_action_type::FIELD_FAVORITE, 1)),
         bulk_action_type::UNFAVORITE => Ok((bulk_action_type::FIELD_FAVORITE, 0)),
-        _ => Err(anyhow!("Invalid action")),
+        _ => Err(anyhow::anyhow!("Invalid action")),
     }
 }
 
@@ -1261,7 +1261,7 @@ pub fn delete_source(id: i64) -> Result<()> {
         params![id],
     )?;
     if count != 1 {
-        return Err(anyhow!("No sources were deleted"));
+        return Err(anyhow::anyhow!("No sources were deleted"));
     }
     sql.execute("ANALYZE;", params![])?;
     Ok(())

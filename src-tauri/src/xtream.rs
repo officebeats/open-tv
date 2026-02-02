@@ -25,7 +25,7 @@ use crate::{
     log, media_type,
     sql::{self, insert_season},
 };
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use chrono::{DateTime, Local, NaiveDateTime};
@@ -261,7 +261,7 @@ pub async fn get_xtream<R: tauri::Runtime>(app: &tauri::AppHandle<R>, mut source
 
     if fail_count > 2 {
         let _ = tx.rollback();
-        return Err(anyhow!(last_error));
+        return Err(anyhow::anyhow!(last_error));
     }
     if wipe {
         sql::restore_preserve(&tx, source.id.context("no source id")?, channel_preserve)?;
@@ -376,7 +376,7 @@ fn convert_xtream_live_to_channel(
 ) -> Result<Channel> {
     let stream_id = get_serde_json_u64(&stream.stream_id);
     let name = stream.name.as_deref().map(|x| x.trim().to_string()).filter(|s| !s.is_empty())
-        .ok_or_else(|| anyhow!("No name"))?;
+        .ok_or_else(|| anyhow::anyhow!("No name"))?;
     
     Ok(Channel {
         id: None,
@@ -473,7 +473,7 @@ fn get_media_type_string(stream_type: u8) -> Result<String> {
         media_type::LIVESTREAM => Ok("live".to_string()),
         media_type::MOVIE => Ok("movie".to_string()),
         media_type::SERIE => Ok("series".to_string()),
-        _ => Err(anyhow!("Invalid stream_type")),
+        _ => Err(anyhow::anyhow!("Invalid stream_type")),
     }
 }
 
@@ -749,7 +749,7 @@ fn xtream_epg_to_epg(epg: XtreamEPGItem, url: &Url, stream_id: &str) -> Result<E
 fn get_timeshift_url_base(source: &Source) -> Result<Url> {
     let mut url = Url::parse(source.url_origin.as_ref().context("no origin")?)?;
     url.path_segments_mut()
-        .map_err(|_| anyhow!("Can't mutate url"))?
+        .map_err(|_| anyhow::anyhow!("Can't mutate url"))?
         .extend(&["streaming", "timeshift.php"]);
     url.query_pairs_mut()
         .append_pair("username", source.username.as_ref().context("no username")?)

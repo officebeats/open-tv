@@ -19,7 +19,7 @@
  * This project is a fork of Open TV by Fredolx.
  */
 
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 #[cfg(target_os = "windows")]
 use anyhow::Context;
 use futures_util::StreamExt;
@@ -230,7 +230,7 @@ pub async fn auto_install_dependency(app: AppHandle, name: &str) -> Result<()> {
     {
         let _ = app;
         let _ = name;
-        return Err(anyhow!("Auto-install is only supported on Windows at this time. Please use your package manager."));
+        return Err(anyhow::anyhow!("Auto-install is only supported on Windows at this time. Please use your package manager."));
     }
 
     #[cfg(target_os = "windows")]
@@ -248,7 +248,7 @@ pub async fn auto_install_dependency(app: AppHandle, name: &str) -> Result<()> {
             "mpv" => install_mpv_windows(app, &deps_dir).await?,
             "ffmpeg" => install_ffmpeg_windows(app, &deps_dir).await?,
             "yt-dlp" => install_ytdlp_windows(app, &deps_dir).await?,
-            _ => return Err(anyhow!("Unsupported dependency: {}", name)),
+            _ => return Err(anyhow::anyhow!("Unsupported dependency: {}", name)),
         }
         Ok(())
     }
@@ -266,14 +266,14 @@ async fn install_mpv_windows(app: AppHandle, deps_dir: &Path) -> Result<()> {
         .await?;
 
     if !resp.status().is_success() {
-        return Err(anyhow!("GitHub API check failed: {}", resp.status()));
+        return Err(anyhow::anyhow!("GitHub API check failed: {}", resp.status()));
     }
 
     let json: Value = resp.json().await?;
     
     // Find the correct asset (x86_64 mingw32 zip)
     let assets = json["assets"].as_array()
-        .ok_or_else(|| anyhow!("No assets found in latest release"))?;
+        .ok_or_else(|| anyhow::anyhow!("No assets found in latest release"))?;
 
     let download_url = assets.iter()
         .find_map(|asset| {
@@ -284,7 +284,7 @@ async fn install_mpv_windows(app: AppHandle, deps_dir: &Path) -> Result<()> {
                 None
             }
         })
-        .ok_or_else(|| anyhow!("Could not find compatible MPV zip in latest release"))?;
+        .ok_or_else(|| anyhow::anyhow!("Could not find compatible MPV zip in latest release"))?;
 
     download_and_extract(app, "MPV Player", &download_url, deps_dir, "mpv.exe").await
 }
@@ -331,7 +331,7 @@ async fn download_and_extract(app: AppHandle, display_name: &str, url: &str, dep
             .context("Failed to run PowerShell fallback")?;
             
         if !ps_output.status.success() {
-             return Err(anyhow!("Extraction failed: {}", err));
+             return Err(anyhow::anyhow!("Extraction failed: {}", err));
         }
     }
 
@@ -385,7 +385,7 @@ async fn download_file(app: AppHandle, display_name: &str, url: &str, dest: &Pat
     let response = client.get(url).send().await?;
     
     if !response.status().is_success() {
-        return Err(anyhow!("Server returned error {}: {}", response.status(), url));
+        return Err(anyhow::anyhow!("Server returned error {}: {}", response.status(), url));
     }
 
     let total_size = response.content_length().unwrap_or(0);
@@ -397,7 +397,7 @@ async fn download_file(app: AppHandle, display_name: &str, url: &str, dest: &Pat
     let mut stream = response.bytes_stream();
 
     while let Some(item) = stream.next().await {
-        let chunk = item.map_err(|e| anyhow!("Stream error: {}", e))?;
+        let chunk = item.map_err(|e| anyhow::anyhow!("Stream error: {}", e))?;
         file.write_all(&chunk).await?;
         downloaded += chunk.len() as u64;
 
