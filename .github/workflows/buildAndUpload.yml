@@ -28,6 +28,12 @@ jobs:
         with:
           cache-workspaces: "src-tauri -> target"
 
+      - name: Add Mac Targets
+        if: startsWith(matrix.os, 'macos-')
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
       - name: Download mpv
         if: matrix.os == 'windows-latest'
         shell: powershell
