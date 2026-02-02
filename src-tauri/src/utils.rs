@@ -39,11 +39,13 @@ use reqwest::{
 };
 use serde::Serialize;
 use std::{
-    env::{consts::OS, current_exe},
+    env::consts::OS,
     fs::File,
     path::{Path, PathBuf},
     sync::LazyLock,
 };
+#[cfg(not(target_os = "macos"))]
+use std::env::current_exe;
 use tauri::{AppHandle, Emitter, State};
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
