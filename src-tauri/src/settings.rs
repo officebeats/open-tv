@@ -83,12 +83,20 @@ pub fn get_settings() -> Result<Settings> {
 
     // Safety: Filter out incompatible or buggy parameters from previous sessions
     if let Some(ref mut params) = settings.mpv_params {
-        if params.contains("--dns-cache-timeout") {
-            *params = params.split_whitespace()
-                .filter(|arg| !arg.contains("dns-cache-timeout"))
-                .collect::<Vec<_>>()
-                .join(" ");
-        }
+        // Remove known crash-inducing or incompatible flags
+        let list = params.split_whitespace()
+            .filter(|arg| {
+                !arg.contains("dns-cache-timeout") &&
+                !arg.contains("color-levels") && 
+                !arg.contains("protocol_whitelist") && 
+                !arg.contains("reconnect-streamed") &&
+                !arg.contains("reconnect-on-network-error") &&
+                !arg.contains("reconnect-on-http-error") &&
+                !arg.contains("reconnect-delay-max")
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+        *params = list;
     }
 
     Ok(settings)

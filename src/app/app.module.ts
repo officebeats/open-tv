@@ -43,6 +43,8 @@ import { TimeAgoPipe } from './pipes/time-ago.pipe';
 import { HeaderComponent } from './home/components/header/header.component';
 import { SidebarComponent } from './home/components/sidebar/sidebar.component';
 import { PlayerComponent } from './home/components/player/player.component';
+import { CategoryManagerModalComponent } from './home/components/category-manager-modal/category-manager-modal.component';
+import { AnimatedShaderBackgroundComponent } from './shared/components/animated-shader-background/animated-shader-background.component';
 
 @NgModule({
   declarations: [
@@ -73,6 +75,8 @@ import { PlayerComponent } from './home/components/player/player.component';
     HeaderComponent,
     SidebarComponent,
     PlayerComponent,
+    CategoryManagerModalComponent,
+    AnimatedShaderBackgroundComponent,
   ],
   imports: [
     BrowserModule,

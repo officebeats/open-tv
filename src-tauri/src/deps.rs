@@ -21,7 +21,9 @@
 
 use anyhow::{Result, anyhow, Context};
 use futures_util::StreamExt;
+use reqwest::header::USER_AGENT;
 use serde::Serialize;
+use serde_json::Value;
 use std::env::consts::OS;
 use std::path::Path;
 use std::process::Command;
@@ -250,13 +252,37 @@ pub async fn auto_install_dependency(app: AppHandle, name: &str) -> Result<()> {
 
 #[cfg(target_os = "windows")]
 async fn install_mpv_windows(app: AppHandle, deps_dir: &Path) -> Result<()> {
-    // Shinchiro builds are the gold standard for Windows MPV
-    // We'll target the v3-x86_64 build for modern hardware
-    let url = "https://github.com/shinchiro/mpv-winbuild-cmake/releases/latest/download/mpv-x86_64-v3-20250123-git-6950275.zip"; 
-    // Note: In a production app, we'd fetch the latest release JSON from GitHub API to get the dynamic filename.
-    // For this implementation, we use a known-good very recent release link.
+    // Dynamically fetch the latest stable release from the official MPV repo
+    let client = reqwest::Client::new();
+    let api_url = "https://api.github.com/repos/mpv-player/mpv/releases/latest";
     
-    download_and_extract(app, "MPV Player", url, deps_dir, "mpv.exe").await
+    let resp = client.get(api_url)
+        .header(USER_AGENT, "BeatsTV-Updater/1.0")
+        .send()
+        .await?;
+
+    if !resp.status().is_success() {
+        return Err(anyhow!("GitHub API check failed: {}", resp.status()));
+    }
+
+    let json: Value = resp.json().await?;
+    
+    // Find the correct asset (x86_64 mingw32 zip)
+    let assets = json["assets"].as_array()
+        .ok_or_else(|| anyhow!("No assets found in latest release"))?;
+
+    let download_url = assets.iter()
+        .find_map(|asset| {
+            let name = asset["name"].as_str()?;
+            if name.contains("x86_64") && name.contains("mingw32") && name.ends_with(".zip") {
+                asset["browser_download_url"].as_str().map(|s| s.to_string())
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| anyhow!("Could not find compatible MPV zip in latest release"))?;
+
+    download_and_extract(app, "MPV Player", &download_url, deps_dir, "mpv.exe").await
 }
 
 #[cfg(target_os = "windows")]
@@ -282,19 +308,62 @@ async fn download_and_extract(app: AppHandle, display_name: &str, url: &str, dep
         "progress": 100
     }));
 
-    // Use PowerShell to extract as it's built-in to Windows
-    let output = Command::new("powershell")
-        .arg("-Command")
-        .arg(format!("Expand-Archive -Path '{}' -DestinationPath '{}' -Force", zip_path.to_string_lossy(), deps_dir.to_string_lossy()))
+    // Use built-in bsdtar (Windows 10/11) for robust extraction (Supports zip, tar, etc.)
+    let output = Command::new("tar")
+        .arg("-xf")
+        .arg(&zip_path)
+        .arg("-C")
+        .arg(deps_dir)
         .output()
-        .context("Failed to run PowerShell Expand-Archive")?;
+        .context("Failed to run tar extraction")?;
 
     if !output.status.success() {
         let err = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow!("Extraction failed: {}", err));
+        // Fallback to PowerShell if tar fails
+        let ps_output = Command::new("powershell")
+            .arg("-Command")
+            .arg(format!("Expand-Archive -Path '{}' -DestinationPath '{}' -Force", zip_path.to_string_lossy(), deps_dir.to_string_lossy()))
+            .output()
+            .context("Failed to run PowerShell fallback")?;
+            
+        if !ps_output.status.success() {
+             return Err(anyhow!("Extraction failed: {}", err));
+        }
     }
 
-    // FFmpeg and MPV zips often have nested folders. We need to find the bin and move it or just ensure it exists.
+    // FFmpeg and MPV zips often have nested folders. We need to find the bin and move it.
+    let bin_filename = target_bin;
+    
+    // Find the binary in the extracted directory (including subfolders)
+    let mut found_path = None;
+    for entry in std::fs::read_dir(deps_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        
+        if path.is_file() && path.file_name().unwrap_or_default() == bin_filename {
+            found_path = Some(path);
+            break;
+        } else if path.is_dir() {
+            // Check one level deeper for common build structures
+            for sub_entry in std::fs::read_dir(&path)? {
+                let sub_entry = sub_entry?;
+                let sub_path = sub_entry.path();
+                if sub_path.is_file() && sub_path.file_name().unwrap_or_default() == bin_filename {
+                    found_path = Some(sub_path);
+                    break;
+                }
+            }
+        }
+        if found_path.is_some() { break; }
+    }
+
+    if let Some(src) = found_path {
+        let dest = deps_dir.join(bin_filename);
+        if src != dest {
+            std::fs::rename(src, dest)?;
+        }
+    }
+
     // Cleanup zip
     let _ = std::fs::remove_file(zip_path);
     
@@ -310,6 +379,11 @@ async fn download_and_extract(app: AppHandle, display_name: &str, url: &str, dep
 async fn download_file(app: AppHandle, display_name: &str, url: &str, dest: &Path) -> Result<()> {
     let client = reqwest::Client::new();
     let response = client.get(url).send().await?;
+    
+    if !response.status().is_success() {
+        return Err(anyhow!("Server returned error {}: {}", response.status(), url));
+    }
+
     let total_size = response.content_length().unwrap_or(0);
     
     let mut file = tokio::fs::File::create(dest).await?;

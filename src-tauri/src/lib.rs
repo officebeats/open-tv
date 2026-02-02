@@ -134,6 +134,8 @@ pub fn run() {
             cancel_play,
             hide_channel,
             hide_group,
+            hide_groups_bulk,
+            hide_channels_bulk,
             remove_from_history,
             detect_tags,
             set_tag_visibility,
@@ -335,6 +337,16 @@ fn hide_channel(id: i64, hidden: bool) -> Result<(), String> {
 #[tauri::command(async)]
 fn hide_group(id: i64, hidden: bool) -> Result<(), String> {
     sql::hide_group(id, hidden).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn hide_groups_bulk(group_ids: Vec<i64>, hidden: bool) -> Result<(), String> {
+    sql::hide_groups_bulk(group_ids, hidden).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn hide_channels_bulk(channel_ids: Vec<i64>, hidden: bool) -> Result<(), String> {
+    sql::hide_channels_bulk(channel_ids, hidden).map_err(map_err_frontend)
 }
 
 #[tauri::command(async)]
@@ -669,12 +681,11 @@ async fn fetch_vod_info(channel: Channel) -> Result<xtream::XtreamVodInfo, Strin
 }
 
 #[tauri::command]
-fn get_mpv_preset(preset: String) -> String {
+async fn get_mpv_preset(preset: String) -> Result<String, String> {
     match preset.as_str() {
-        "stable" => mpv::get_stable_params(),
-        "enhanced" => mpv::get_enhanced_params(),
-        "performance" => mpv::get_performance_params(),
-        "default" => String::new(),
-        _ => String::new(),
+        "stable" => Ok(crate::mpv::get_stable_params()),
+        "enhanced" => Ok(crate::mpv::get_enhanced_params()),
+        "performance" => Ok(crate::mpv::get_performance_params()),
+        _ => Ok(crate::mpv::get_stable_params()), // Default to stable
     }
 }

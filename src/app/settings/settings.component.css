@@ -14,6 +14,23 @@
   filter: drop-shadow(0 0 5px var(--beats-red));
 }
 
+.settings-page {
+  min-height: 100vh;
+  padding-top: 5rem;
+  display: block !important;
+  text-align: left !important;
+}
+
+.settings-card {
+  background: var(--beats-surface);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-radius: var(--clay-radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+  margin-bottom: 3rem;
+}
+
 .author {
   text-align: center;
   font-size: 1rem;
@@ -116,6 +133,7 @@ button:hover .history {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
   z-index: 1000;
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
@@ -198,4 +216,163 @@ button:hover .history {
   height: 100%;
   background: var(--beats-red);
   transition: width 0.3s ease;
+}
+
+/* Library Styles */
+.library-group {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.priority-group {
+  border-left: 4px solid var(--beats-red) !important;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--beats-red-rgb), 0.05) 0%,
+    rgba(255, 255, 255, 0.03) 100%
+  ) !important;
+}
+
+.category-pill:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.category-hidden {
+  opacity: 0.4;
+  background: transparent !important;
+  border: 1px dashed rgba(255, 255, 255, 0.1) !important;
+}
+
+.category-hidden:hover {
+  opacity: 0.8;
+}
+
+.custom-switch .form-check-input {
+  width: 2.5em;
+  height: 1.25em;
+  cursor: pointer;
+}
+
+.custom-switch .form-check-input:checked {
+  background-color: var(--beats-red);
+  border-color: var(--beats-red);
+}
+
+.sticky-top {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-left: -1rem;
+  margin-right: -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.group-header span.badge {
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.library-alert {
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 4px solid var(--beats-red) !important;
+}
+
+.library-sticky-header {
+  background: #111;
+  z-index: 10;
+}
+
+.group-badge-prefix {
+  background: var(--beats-red);
+  color: white;
+  font-size: 0.9em;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.group-title {
+  letter-spacing: 0.5px;
+  color: #eee;
+}
+
+.category-pill-container {
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.category-pill-switch {
+  transform: scale(0.8);
+}
+
+.medical-check-container {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.health-healthy {
+  color: #2ecc71;
+  white-space: nowrap;
+}
+
+.health-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.dependency-info {
+  flex: 1;
+  overflow: hidden;
+  margin-right: 1rem;
+}
+
+.dependency-path {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.btn-update {
+  min-width: 90px;
+}
+
+.svg-icon-tiny {
+  width: 18px;
+  height: 18px;
+}
+
+.svg-icon-small {
+  width: 24px;
+  height: 24px;
+}
+
+.svg-icon-large {
+  width: 48px;
+  height: 48px;
+}
+
+.dependency-name {
+  color: #eee;
+}
+
+.install-progress-bg {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.install-progress-bar-red {
+  background: var(--beats-red);
+  border-radius: 4px;
 }

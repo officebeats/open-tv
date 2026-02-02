@@ -1,6 +1,6 @@
 {
   "productName": "Beats TV",
-  "version": "2.0.6",
+  "version": "2.0.7",
 
   "identifier": "com.beatstv.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Beats TV (v2.0.6)",
+        "title": "Beats TV (v2.0.7)",
 
         "width": 800,
         "height": 600,

@@ -236,13 +236,20 @@ fn get_play_args(
 
         eprintln!("Params before filter: {:?}", params);
         
-        // Filter out unsupported options that might be saved in legacy settings
+        // Filter out options known to cause fatal parser errors (commas in lavf-o-add) 
+        // or compatibility issues in different MPV/FFmpeg versions.
         params.retain(|arg| {
-            let keep = !arg.contains("color-levels") && !arg.contains("protocol_whitelist");
-            if !keep {
-                eprintln!("Filtering out incompatible arg: {}", arg);
+            let problematic = arg.contains("color-levels") || 
+                             arg.contains("protocol_whitelist") || 
+                             arg.contains("reconnect_on_http_error") ||
+                             arg.contains("reconnect-streamed") ||
+                             arg.contains("reconnect-on-network-error") ||
+                             arg.contains("reconnect-on-http-error") ||
+                             arg.contains("reconnect-delay-max");
+            if problematic {
+                eprintln!("Filtering out incompatible/legacy arg to prevent crash: {}", arg);
             }
-            keep
+            !problematic
         });
         
         eprintln!("Params after filter: {:?}", params);
@@ -299,14 +306,14 @@ pub fn get_stable_params() -> String {
     // Aggressive Caching for Slow/VPN connections
     args.push("--cache=yes");
     args.push("--demuxer-max-bytes=1GiB");  
-    args.push("--demuxer-max-back-bytes=0"); // DISABLING BACK-BUFFER (Stops the 3s repeat loop)
+    args.push("--demuxer-max-back-bytes=0"); 
     args.push("--demuxer-readahead-secs=300");  
     args.push("--stream-buffer-size=16MiB");  
     args.push("--cache-secs=300");
     args.push("--cache-pause=yes");
-    args.push("--cache-pause-wait=10"); // Massive 10s buffer lead after a drop
-    args.push("--demuxer-seekable-cache=yes"); // Keep seekable cache for VPN recovery
-    args.push("--force-seekable=yes"); // Force stream to be seekable for better recovery
+    args.push("--cache-pause-wait=10"); 
+    args.push("--demuxer-seekable-cache=yes"); 
+    args.push("--force-seekable=yes"); 
     
     // Performance optimizations
     args.push("--framedrop=vo");
@@ -314,26 +321,21 @@ pub fn get_stable_params() -> String {
     args.push("--vd-lavc-skiploopfilter=all");
     args.push("--vd-lavc-threads=4"); 
     args.push("--demuxer-thread=yes");
-    args.push("--hr-seek=no"); // Disable high-res seeking to prevent frame jitter
+    args.push("--hr-seek=no"); 
     
-    // VPN-Optimized Reconnection & Network Tuning (ENHANCED)
+    // Compatible Reconnection (lavf layer)
+    // IMPORTANT: No commas allowed in values! Using 'all' instead of list.
     args.push("--stream-lavf-o-add=reconnect_streamed=1");
-    args.push("--stream-lavf-o-add=reconnect_delay_max=5");
     args.push("--stream-lavf-o-add=reconnect_on_network_error=1");
-    args.push("--stream-lavf-o-add=reconnect_at_eof=1"); // Reconnect at stream end
-    args.push("--stream-lavf-o-add=reconnect_on_http_error=4xx,5xx"); // Retry on HTTP errors
-    args.push("--stream-lavf-o-add=timeout=120000000"); // 2 minute timeout
-    args.push("--stream-lavf-o-add=tcp_fastopen=1");
-    args.push("--network-timeout=120"); // 2 minute network timeout
+    args.push("--stream-lavf-o-add=reconnect_on_http_error=all"); 
+    args.push("--stream-lavf-o-add=reconnect_delay_max=5");
+    args.push("--network-timeout=120"); 
     args.push("--tls-verify=no"); 
     args.push("--cache-on-disk=no");
     
-    // Efficiency
-    args.push("--stream-lavf-o-add=protocol_whitelist=file,http,https,tcp,tls,crypto,rtp,udp");
     args.push("--demuxer-lavf-o-add=fflags=+nobuffer+discardcorrupt");
     
     args.push("--user-agent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\"");
-    
     args.push("--prefetch-playlist=yes");
     
     if OS == "windows" {
@@ -354,7 +356,7 @@ pub fn get_enhanced_params() -> String {
     // Pro-Level Rendering Engine
     args.push("--vo=gpu-next");
     args.push("--gpu-api=d3d11");
-    args.push("--hwdec=d3d11va"); // Zero-copy hardware decoding for lower GPU load
+    args.push("--hwdec=d3d11va"); 
     
     // High-Fidelity Scaling Shaders
     args.push("--scale=ewa_lanczossharp");
@@ -363,7 +365,7 @@ pub fn get_enhanced_params() -> String {
     args.push("--scale-antiring=0.7");
     args.push("--cscale-antiring=0.7");
 
-    // Real-time De-banding (Anti-Banding)
+    // Real-time De-banding
     args.push("--deband=yes");
     args.push("--deband-iterations=4");
     args.push("--deband-threshold=48");
@@ -377,19 +379,17 @@ pub fn get_enhanced_params() -> String {
     
     // Color Management
     args.push("--target-colorspace-hint=yes");
-    // args.push("--color-levels=auto"); // Removed causing fatal error
     
-    // Premium Caching (Higher readahead for 4K)
+    // Premium Caching
     args.push("--cache=yes");
     args.push("--demuxer-max-bytes=1GiB");
     args.push("--demuxer-readahead-secs=120"); 
     
-    // Pro-Level Connection Tuning
+    // Compatible Reconnection
     args.push("--stream-lavf-o-add=reconnect_streamed=1");
     args.push("--stream-lavf-o-add=reconnect_on_network_error=1");
-    args.push("--stream-lavf-o-add=timeout=60000000");
-    args.push("--stream-lavf-o-add=tcp_fastopen=1");
-    // args.push("--stream-lavf-o-add=protocol_whitelist=file,http,https,tcp,tls,crypto,rtp,udp");
+    args.push("--stream-lavf-o-add=reconnect_on_http_error=all");
+    args.push("--network-timeout=60");
     
     args.push("--user-agent=\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\"");
     
@@ -406,31 +406,31 @@ pub fn get_enhanced_params() -> String {
 pub fn get_performance_params() -> String {
     let mut args = Vec::new();
 
-    // Standard high-speed engine (GPU mode for compatibility)
+    // Standard high-speed engine
     args.push("--vo=gpu");
     args.push("--gpu-api=d3d11");
     args.push("--hwdec=d3d11va"); 
 
-    // Low-Cost Upscaling (Perceptually Crisp)
-    args.push("--scale=spline36"); // Good balance, significantly lighter than Lanczos
+    // Low-Cost Upscaling
+    args.push("--scale=spline36");
     args.push("--cscale=bilinear");
     args.push("--dscale=mitchell");
 
-    // Low-Cost Frame Smoothing (The "Soap Opera" effect on a budget)
+    // Low-Cost Frame Smoothing
     args.push("--video-sync=display-resample");
     args.push("--interpolation=yes");
-    args.push("--tscale=oversample"); // Temporal oversampling is very cheap on GPU
+    args.push("--tscale=oversample");
     
     // Performance Hacks
-    args.push("--opengl-pbo=yes"); // Faster texture uploads
+    args.push("--opengl-pbo=yes");
     args.push("--sws-scaler=fast-bilinear");
     
-    // Network Optimization
+    // Compatible Reconnection
     args.push("--stream-lavf-o-add=reconnect_streamed=1");
-    args.push("--stream-lavf-o-add=reconnect_delay_max=2");
     args.push("--stream-lavf-o-add=reconnect_on_network_error=1");
-    args.push("--stream-lavf-o-add=timeout=30000000");
-    args.push("--stream-lavf-o-add=tcp_fastopen=1");
+    args.push("--stream-lavf-o-add=reconnect_on_http_error=all");
+    args.push("--network-timeout=30");
+    
     args.push("--cache=yes");
     args.push("--demuxer-max-bytes=256MiB");
     

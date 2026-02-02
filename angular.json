@@ -57,7 +57,7 @@
               "optimization": {
                 "scripts": true,
                 "styles": true,
-                "fonts": false
+                "fonts": true
               },
               "outputHashing": "all"
             },

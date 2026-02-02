@@ -596,12 +596,16 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
         WHERE ({})
         AND media_type IN ({})
         AND source_id IN ({})
-        AND url IS NOT NULL
-        AND hidden = 0"#,
+        AND url IS NOT NULL"#,
         get_keywords_sql(keywords.len()),
         generate_placeholders(media_types.len()),
         generate_placeholders(filters.source_ids.len()),
     );
+
+    if filters.show_hidden.unwrap_or(false) == false {
+        sql_query += "\nAND hidden = 0";
+        sql_query += "\nAND NOT EXISTS (SELECT 1 FROM groups WHERE groups.id = CHANNELS.group_id AND groups.hidden = 1)";
+    }
     let mut baked_params = 2;
     if filters.view_type == view_type::FAVORITES && filters.series_id.is_none() {
         sql_query += "\nAND favorite = 1";
@@ -997,7 +1001,7 @@ fn search_hidden(filters: Filters) -> Result<Vec<Channel>> {
         WHERE ({})
         AND media_type IN ({})
         AND source_id IN ({})
-        AND hidden = 1
+        AND (hidden = 1 OR EXISTS (SELECT 1 FROM groups WHERE groups.id = channels.group_id AND groups.hidden = 1))
         UNION ALL
         SELECT id, image, name, NULL as series_id, source_id, NULL as stream_id, NULL as tv_archive, NULL as url, NULL as episode_num, hidden, 3 as media_type, NULL as group_id, NULL as season_id, 0 as favorite
         FROM groups
@@ -1082,7 +1086,11 @@ fn to_sql_like(query: Option<String>) -> String {
 
 pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
     let sql = get_conn()?;
-    let offset: u16 = filters.page as u16 * PAGE_SIZE as u16 - PAGE_SIZE as u16;
+    let (offset, limit) = if filters.page == 0 {
+        (0, 100000) // Virtually unlimited for categories
+    } else {
+        (filters.page as i32 * PAGE_SIZE as i32 - PAGE_SIZE as i32, PAGE_SIZE as i32)
+    };
     let query = filters.query.unwrap_or("".to_string());
     let media_types = filters.media_types.context("no media types")?;
     let keywords: Vec<String> = match filters.use_keywords {
@@ -1092,7 +1100,11 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
             .collect(),
         false => vec![format!("%{query}%")],
     };
-    let mut params: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(2 + filters.source_ids.len());
+    if filters.source_ids.is_empty() || media_types.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let mut params: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(5 + filters.source_ids.len());
     let mut sql_query = format!(
         r#"
         SELECT *
@@ -1105,8 +1117,10 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
         generate_placeholders(filters.source_ids.len()),
         generate_placeholders(media_types.len())
     );
-    sql_query += "\nAND hidden = 0";
-    sql_query += "\nAND EXISTS (SELECT 1 FROM channels WHERE channels.group_id = groups.id AND channels.hidden = 0)";
+    if filters.show_hidden.unwrap_or(false) == false {
+        sql_query += "\nAND hidden = 0";
+        sql_query += "\nAND EXISTS (SELECT 1 FROM channels WHERE channels.group_id = groups.id AND channels.hidden = 0)";
+    }
     if filters.sort != sort_type::PROVIDER {
         let order = match filters.sort {
             sort_type::ALPHABETICAL_ASC => "ASC",
@@ -1120,7 +1134,7 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
     params.extend(to_to_sql(&filters.source_ids));
     params.extend(to_to_sql(&media_types));
     params.push(&offset);
-    params.push(&PAGE_SIZE);
+    params.push(&limit);
     let channels: Vec<Channel> = sql
         .prepare(&sql_query)?
         .query_map(params_from_iter(params), row_to_group)?
@@ -1315,6 +1329,38 @@ pub fn hide_group(group_id: i64, hidden: bool) -> Result<()> {
     "#,
         params![hidden, group_id],
     )?;
+    Ok(())
+}
+
+pub fn hide_groups_bulk(group_ids: Vec<i64>, hidden: bool) -> Result<()> {
+    let mut sql = get_conn()?;
+    let tx = sql.transaction()?;
+    
+    // We prepare the statement once and execute it for each ID
+    // This is much faster than individual transactions but safe
+    {
+        let mut stmt = tx.prepare("UPDATE groups SET hidden = ?1 WHERE id = ?2")?;
+        for id in group_ids {
+            stmt.execute(params![hidden, id])?;
+        }
+    }
+    
+    tx.commit()?;
+    Ok(())
+}
+
+pub fn hide_channels_bulk(channel_ids: Vec<i64>, hidden: bool) -> Result<()> {
+    let mut sql = get_conn()?;
+    let tx = sql.transaction()?;
+    
+    {
+        let mut stmt = tx.prepare("UPDATE channels SET hidden = ?1 WHERE id = ?2")?;
+        for id in channel_ids {
+            stmt.execute(params![hidden, id])?;
+        }
+    }
+    
+    tx.commit()?;
     Ok(())
 }
 
