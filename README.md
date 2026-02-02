@@ -42,7 +42,7 @@ This project is a masterclass in modern **Agentic AI Coding**. It proves that wi
 
 Looking to setup your IPTV on Windows? Follow these simple steps:
 
-1. 📥 **[Download Latest Beats TV .exe](https://github.com/officebeats/open-tv/releases/latest)**
+1. 📥 **[Download Latest Beats TV .exe](https://github.com/officebeats/beats-tv/releases/latest)**
 2. ⚙️ **Run the Installer** and launch the app.
 3. 📡 **Add Your Source**: Enter your **Xtream Codes** login or paste an **M3U Playlist URL**.
 4. 🍿 **Kick Back**: Experience 4K-ready streaming with ultra-low latency.

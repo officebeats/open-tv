@@ -4,7 +4,7 @@ version = "2.0.7"
 description = "Fast And Powerful IPTV App"
 authors = ["Frédéric Lachapelle"]
 license = "GPL-2.0"
-repository = "https://github.com/Beats-Projects/open-tv"
+repository = "https://github.com/officebeats/beats-tv"
 edition = "2021"
 rust-version = "1.91.0"
 
