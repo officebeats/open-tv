@@ -6,7 +6,7 @@ import { Component, Input } from '@angular/core';
   styleUrl: './loading.component.css',
 })
 export class LoadingComponent {
-  @Input() center: boolean = false;
+  @Input() isCentered: boolean = false;
   count = 0;
   texts: string[] = ['Consider donating to Beats TV', 'Loading your channels...'];
 
