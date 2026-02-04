@@ -1,6 +1,16 @@
 <aside class="sidebar glass-effect">
   <div class="sidebar-logo-container">
-    <img [src]="getLogoSrc()" alt="Beats TV" [title]="'Beats TV'" class="sidebar-logo-persistent" />
+    <img
+      [src]="getLogoSrc()"
+      alt="Beats TV"
+      [title]="'Beats TV'"
+      class="sidebar-logo-persistent"
+      (error)="onLogoError($event)"
+      #logoImg
+    />
+    <div class="logo-placeholder" *ngIf="logoFailed">
+      <span class="beats-text">B</span>
+    </div>
   </div>
 
   <nav class="sidebar-nav">

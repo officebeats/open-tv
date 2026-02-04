@@ -145,6 +145,7 @@
 
 <!-- Content Detail Modal -->
 <app-content-detail-modal
+  *ngIf="selectedChannelForModal"
   [channel]="selectedChannelForModal"
   [isOpen]="!!selectedChannelForModal"
   [isLoadingDetails]="isLoadingDetails"

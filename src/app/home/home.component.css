@@ -3,25 +3,25 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  /* Clinical Light Theme Background - REVERTED to Dark Gray for Tile Contrast */
-  background: var(--app-bg, #18191c); /* Matte Dark Gray */
-  background: linear-gradient(135deg, #18191c 0%, #1e1f24 100%);
+  background: #000 !important;
+  color: #fff !important;
   position: relative;
-  color: #f4f4f5; /* Light text for dark background */
 }
 
 .main-wrapper {
   display: flex;
   flex: 1;
   width: 100%;
+  background: transparent;
 }
 
 .content-container {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0; /* Prevent flex blowout */
+  min-width: 0;
   padding-bottom: 2rem;
+  background: transparent;
 }
 
 /* App Container (Deprecated but kept for stability) */

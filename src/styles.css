@@ -1,6 +1,7 @@
 @import "./assets/css/bootstrap.min.css";
 @import "ngx-toastr/toastr";
-@import "@angular/material/prebuilt-themes/pink-bluegrey.css";
+/* Keep only one material theme */
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
 @import "./assets/css/roboto.css";
 
 @keyframes float {
@@ -13,52 +14,90 @@
   }
 }
 
-/* Beats TV Core Theme Variables - Smooth Glass Default */
+/* Beats TV - Nuclear Dark Style Engine */
 :root {
+  color-scheme: dark !important;
   --beats-black: #000000;
   --beats-dark-gray: #121212;
   --beats-charcoal: #1c1c1e;
-  --beats-surface: rgba(25, 25, 30, 0.45);
+  --beats-surface: rgba(25, 25, 30, 0.65);
   --beats-surface-light: rgba(255, 255, 255, 0.08);
-  --accent-primary: #007aff; /* Apple Blue as primary accent */
+  --accent-primary: #007aff;
   --accent-soft: #5ac8fa;
   --accent-glow: rgba(0, 122, 255, 0.5);
-  --beats-red: var(--accent-primary); /* Legacy Alias */
-  --beats-red-soft: var(--accent-soft);
-  --beats-red-glow: var(--accent-glow);
+  --beats-red: var(--accent-primary);
   --beats-text-white: #ffffff;
   --beats-text-gray: #aeb2b7;
+  --app-bg: url("./assets/app_wallpaper.png");
 
-  /* Glass Shadows & Depth */
-  --clay-shadow-dark: rgba(0, 0, 0, 0.4);
-  --clay-shadow-light: rgba(255, 255, 255, 0.1);
-  --clay-shadow-red: rgba(0, 122, 255, 0.3);
-
-  /* Apple Style Radius */
+  /* Radius System */
   --clay-radius-sm: 10px;
   --clay-radius-md: 14px;
   --clay-radius-lg: 22px;
   --clay-radius-xl: 32px;
-
-  /* Default Background (Pure Silk Wallpaper) */
-  --app-bg: url("./assets/app_wallpaper.png");
 }
 
-.svg-icon-tiny {
-  width: 16px;
-  height: 16px;
+/* 1. Global Reset - Kill the Light */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html,
 body {
-  background: var(--app-bg) no-repeat center center fixed;
-  background-color: var(--beats-black);
-  background-attachment: fixed;
-  background-size: cover;
-  color: var(--beats-text-white);
+  background: #000 !important;
+  background-color: #000 !important;
+  color: #fff !important;
+  margin: 0;
+  padding: 0;
   min-height: 100vh;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Roboto", sans-serif;
+}
+
+/* 2. Neutralize Browser & Framework Defaults */
+button,
+input,
+select,
+textarea {
+  background: transparent !important;
+  color: #fff !important;
+  border: none;
+  outline: none;
+}
+
+/* Suppress Bootstrap White */
+.bg-light,
+.bg-white,
+.card,
+.modal-content,
+.list-group-item,
+.btn,
+.nav-item {
+  background-color: transparent !important;
+  color: #fff !important;
+}
+
+/* Keyframes */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* --- Bootstrap Overrides for Claymorphism Red Theme --- */
@@ -339,7 +378,9 @@ body {
 
 /* Theme 0: Smooth Glass (Default Aesthetic) */
 body.theme-smooth-glass {
-  /* Inherits from :root defaults */
+  --beats-surface: rgba(25, 25, 30, 0.45);
+  --accent-primary: #007aff;
+  --accent-soft: #5ac8fa;
 }
 
 /* Global Header Override for Glass Theme (Default) */
@@ -460,6 +501,7 @@ body.theme-smooth-glass ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15) !important;
   border-radius: 10px !important;
   border: 4px solid transparent !important;
+  -webkit-background-clip: padding-box !important;
   background-clip: padding-box !important;
 }
 

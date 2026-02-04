@@ -5,12 +5,17 @@
 }
 
 .category-manager-body {
-  background: rgba(15, 15, 15, 0.98);
+  background: rgba(10, 10, 10, 0.9);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  backdrop-filter: blur(25px) saturate(180%);
   height: 85vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 1.25rem 1.5rem;
+  padding: 1.5rem;
+  position: relative;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
 }
 
 .top-actions-bar {
@@ -26,251 +31,325 @@
   height: 38px;
 }
 
-.compact-input:focus {
-  background: rgba(60, 60, 60, 0.8);
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 5px var(--accent-glow);
+/* --- Selection Action Bar --- */
+.selection-action-bar {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 20, 0.85);
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 0, 51, 0.4);
+  border-radius: 50px;
+  padding: 12px 30px;
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  z-index: 1001;
+  box-shadow:
+    0 15px 50px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(255, 0, 51, 0.15);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.selection-info {
+  color: var(--accent-primary);
+  font-size: 0.9rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding-right: 15px;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-btn-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
-}
-
-/* --- Toggle Switch --- */
-.switch-toggle {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 22px;
-}
-
-.switch-toggle input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.2);
-  transition: 0.4s;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 16px;
-  width: 16px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.4s;
+.action-btn-pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
 }
 
-input:checked + .slider {
-  background-color: #0d6efd; /* Bootstrap Primary */
+.btn-archive:hover {
+  border-color: #ff4444;
+  color: #ff4444;
+}
+.btn-restore:hover {
+  border-color: #00c851;
+  color: #00c851;
+}
+.btn-focus {
+  background: var(--accent-glow);
+  border-color: var(--accent-primary);
 }
 
-input:checked + .slider:before {
-  transform: translateX(18px);
+.btn-cancel {
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 0.85rem;
 }
 
-.slider.round {
-  border-radius: 34px;
+.btn-cancel:hover {
+  color: #fff;
+  text-decoration: underline;
 }
 
-.slider.round:before {
-  border-radius: 50%;
-}
-
-/* --- New Grid Layout --- */
+/* --- Curator Cards --- */
 .families-grid-container {
   flex: 1;
   overflow-y: auto;
   padding-top: 1rem;
   padding-right: 8px;
+  padding-bottom: 80px; /* Space for action bar */
 }
 
 .families-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
 }
 
-/* --- Family Card --- */
-.family-card {
+.curator-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
+  border-radius: 12px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  position: relative;
 }
 
-.family-card:hover {
+.curator-card.selected {
+  border-color: rgba(255, 0, 51, 0.8);
+  background: rgba(255, 0, 51, 0.05);
+  box-shadow: 0 0 20px rgba(255, 0, 51, 0.2);
+  transform: translateY(-2px);
+}
+
+.curator-card:hover:not(.selected) {
   background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Card Header */
-.family-header {
-  padding: 8px 12px;
+.card-visual-wrapper {
+  display: flex;
+  align-items: stretch;
+}
+
+/* Multi-select Checkbox */
+.select-trigger {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.select-trigger:hover .checkbox-box {
+  border-color: var(--accent-primary);
+}
+
+.checkbox-box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.checkbox-box.checked {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.checkbox-box i {
+  font-size: 10px;
+  color: white;
+}
+
+/* Card Header Body */
+.curator-header {
+  flex: 1;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   cursor: pointer;
   position: relative;
-  overflow: hidden;
-  transition:
-    opacity 0.3s ease,
-    background-color 0.2s;
 }
 
-/* Left Indicator Strip */
-.family-indicator {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  transition: background-color 0.3s;
+.status-indicator {
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  margin-right: 12px;
 }
 
-.status-all .family-indicator {
-  background-color: #198754;
-} /* Green */
-.status-partial .family-indicator {
-  background-color: #ffc107;
-} /* Warning */
-.status-none .family-indicator {
-  background-color: rgba(255, 255, 255, 0.1);
-} /* Gray */
+.status-all .status-indicator {
+  background: #00c851;
+}
+.status-partial .status-indicator {
+  background: #ffbb33;
+}
+.status-none .status-indicator {
+  background: #444;
+}
 
-/* Whitelist Mode: Dim hidden items more aggressively */
-.status-none .family-header {
+.status-none .family-name {
   opacity: 0.5;
+  font-style: italic;
 }
 
-/* Prefix Text */
-.family-prefix {
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #eee;
-  margin-left: 4px;
-  flex-grow: 1;
+.family-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.95rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Meta Data */
-.family-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.item-count {
+  font-size: 0.75rem;
+  color: #666;
+  margin-right: 10px;
 }
 
-.badge-count {
-  font-size: 0.7rem;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 2px 6px;
-  border-radius: 10px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.expand-btn {
+.expand-chevron {
   width: 24px;
   height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  color: rgba(255, 255, 255, 0.4);
-  position: relative;
-  z-index: 10;
+  color: #555;
+  transition: color 0.2s;
 }
 
-.expand-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+.expand-chevron:hover {
+  color: #fff;
 }
 
-.expand-btn svg {
-  display: block;
-  fill: currentColor;
-  pointer-events: none;
-}
-
-/* --- Drawer (Sub-Categories) --- */
-.family-drawer {
-  background: rgba(0, 0, 0, 0.3);
+/* Sub-Drawer */
+.curator-drawer {
+  background: rgba(0, 0, 0, 0.4);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  max-height: 250px;
+}
+
+.drawer-inner {
+  padding: 8px 0;
   max-height: 200px;
-  display: flex;
-  flex-direction: column;
-}
-
-.drawer-content {
   overflow-y: auto;
-  padding: 4px 0;
 }
 
-.sub-category-row {
+.sub-row {
+  padding: 6px 15px 6px 50px;
   display: flex;
   align-items: center;
-  padding: 4px 12px;
+  gap: 12px;
   cursor: pointer;
-  font-size: 0.8rem;
-  transition: background 0.15s;
+  font-size: 0.85rem;
 }
 
-.sub-category-row:hover {
+.sub-row:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Status Dot */
-.sub-status-dot {
+.sub-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  margin-right: 8px;
+  background: #444;
 }
 
-.sub-status-dot.active {
-  background: #198754; /* Green */
-  box-shadow: 0 0 4px rgba(25, 135, 84, 0.6);
+.sub-dot.active {
+  background: #00c851;
+  box-shadow: 0 0 5px #00c851;
 }
 
-.sub-name {
-  flex-grow: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #ddd;
+.sub-label {
+  flex: 1;
 }
-
-.sub-name.text-muted {
+.sub-label.archived {
+  opacity: 0.4;
   text-decoration: line-through;
-  opacity: 0.5;
 }
 
-/* Custom Scrollbar */
-.customs-scroll::-webkit-scrollbar {
-  width: 6px;
+.sub-action-icon {
+  color: #444;
+  font-size: 0.8rem;
+}
+.sub-row:hover .sub-action-icon {
+  color: #888;
 }
 
-.customs-scroll::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
+/* --- Loading State --- */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.5);
+  gap: 15px;
 }
 
-.customs-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+  border-width: 3px;
+  border-color: rgba(255, 255, 255, 0.1);
+  border-right-color: var(--accent-primary);
 }
 
-.customs-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+/* --- Empty State --- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 2rem;
+}
+
+.empty-icon-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.empty-state h5 {
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.9);
 }

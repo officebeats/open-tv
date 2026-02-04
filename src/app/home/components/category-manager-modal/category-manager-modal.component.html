@@ -1,18 +1,18 @@
 <div class="modal-header category-manager-header">
   <div class="header-left">
-    <h4 class="modal-title m-0">Library Focus Manager</h4>
-    <p class="text-muted small m-0">Quickly toggle channel groups</p>
+    <h4 class="modal-title m-0">Library Curator</h4>
+    <p class="text-muted small m-0">Select and manage your channel groups</p>
   </div>
   <button
     type="button"
     class="btn-close btn-close-white"
     (click)="closeModal()"
-    title="Close manager"
+    title="Close curator"
   ></button>
 </div>
 
 <div class="modal-body category-manager-body">
-  <!-- Top Bar: Search & Global Actions -->
+  <!-- Top Bar: Search & Global Sync -->
   <div class="top-actions-bar mb-3">
     <div class="d-flex align-items-center gap-3 w-100">
       <!-- Search Input -->
@@ -24,118 +24,121 @@
           <input
             type="text"
             class="form-control compact-input"
-            placeholder="Search families (e.g. 'UK', 'Sports')..."
+            placeholder="Search regions or groups..."
             [(ngModel)]="searchQuery"
             (ngModelChange)="filterList()"
           />
         </div>
       </div>
 
-      <!-- Whitelist Mode Toggle -->
-      <div class="whitelist-toggle-wrapper d-flex align-items-center gap-2">
-        <span class="small text-muted fw-bold" [class.text-white]="!hideMode">Whitelist</span>
-        <label
-          class="switch-toggle mx-1"
-          title="Toggle between Hide Mode (Default) and Whitelist Mode"
-        >
-          <input type="checkbox" [checked]="hideMode" (change)="toggleMode()" />
-          <span class="slider round"></span>
-        </label>
-        <span class="small text-muted fw-bold" [class.text-white]="hideMode">Hide Mode</span>
-      </div>
-
-      <!-- Global Bulk Actions -->
+      <!-- Quick Global Actions -->
       <div class="d-flex gap-2">
-        <button
-          class="btn btn-outline-danger btn-sm px-3"
-          (click)="hideAll()"
-          title="Hide everything to start fresh (Whitelist Workflow)"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="mr-1">
-            <path
-              d="M11.83,9L15,12.17C14.83,12.58 14.58,12.83 14.17,13L11.83,9M12,17A5,5 0 0,1 7,12C7,11.58 7.04,11.17 7.11,10.77L8.91,12.57C8.96,13.26 9.27,13.89 9.77,14.39C10.27,14.89 10.9,15.2 11.59,15.25L13.39,17.05C12.96,17.13 12.5,17.21 12,17.21M2,4.27L3.27,3L3.54,3.27L20.73,20.46L20.46,20.73L19.11,22.08L17.73,20.71C16.03,21.57 14.11,22 12,22C7,22 2.73,18.89 1,14.5C1.96,12.06 3.6,10.06 5.68,8.66L2,4.27M12,7A5,5 0 0,1 17,12C17,12.5 16.92,12.96 16.84,13.39L15.42,11.97C15.37,11.28 15.06,10.65 14.56,10.15C14.06,9.65 13.43,9.34 12.74,9.29L11.32,7.87C11.54,7.83 11.76,7.79 12,7.79M12,4.5C14.11,4.5 16.03,4.93 17.73,5.79L19.46,4.06C17.27,2.75 14.73,2 12,2C7,2 2.73,5.11 1,9.5C1.5,10.63 2.14,11.69 2.91,12.64L4.85,14.58C5,14.28 5.17,14 5.37,13.73C5.7,13.3 6.09,12.91 6.54,12.57L4.84,10.87C3.96,9.15 3.32,7.3 2.93,5.34L12,4.5Z"
-            />
-          </svg>
-          Hide All
+        <button class="btn btn-outline-danger btn-sm px-3" (click)="hideAll()" title="Archive All">
+          Archive All
         </button>
         <button
           class="btn btn-outline-success btn-sm px-3"
           (click)="unhideAll()"
-          title="Reset everything to visible"
+          title="Restore All"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="mr-1">
-            <path
-              d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"
-            />
-          </svg>
-          Unhide All
+          Restore All
         </button>
       </div>
     </div>
+  </div>
 
-    <!-- Stats Row -->
-    <div class="selection-status-row d-flex justify-content-between align-items-center mt-3 px-1">
-      <span class="small text-muted">
-        <strong>{{ totalFamilyCount }}</strong> regions found
-      </span>
-      <span class="small text-danger" *ngIf="hiddenFamilyCount > 0">
-        ({{ hiddenFamilyCount }} filtered out)
-      </span>
+  <!-- Smart Action Bar (Visible when items selected) -->
+  <div class="selection-action-bar" *ngIf="numSelected > 0" @fadeInOut>
+    <div class="selection-info">
+      <strong>{{ numSelected }}</strong> groups selected
+    </div>
+    <div class="action-buttons">
+      <button class="action-btn-pill btn-archive" (click)="runSelectionAction('HIDE')">
+        <i class="fa fa-archive"></i> Archive Selection
+      </button>
+      <button class="action-btn-pill btn-restore" (click)="runSelectionAction('SHOW')">
+        <i class="fa fa-eye"></i> Restore Selection
+      </button>
+      <button
+        class="action-btn-pill btn-focus"
+        (click)="runSelectionAction('FOCUS')"
+        title="Hide everything else except selected"
+      >
+        <i class="fa fa-crosshairs"></i> Focus Selection
+      </button>
+      <div class="vertical-divider"></div>
+      <button class="btn-cancel" (click)="selectedPrefixes.clear(); processData()">Cancel</button>
     </div>
   </div>
 
   <!-- Main Grid Content -->
   <div class="families-grid-container customs-scroll">
-    <div *ngIf="loading" class="text-center p-5">
-      <div class="spinner-border text-primary" role="status"></div>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="spinner-border" role="status"></div>
+      <div class="text-muted small">Loading groups...</div>
     </div>
 
-    <div *ngIf="!loading" class="families-grid">
+    <!-- Empty State -->
+    <div *ngIf="!loading && groupFamilies.length === 0" class="empty-state">
+      <div class="empty-icon-circle">
+        <i class="fa fa-folder-open-o"></i>
+      </div>
+      <h5>No groups found</h5>
+      <p class="small text-muted">Try adjusting your search or sources.</p>
+    </div>
+
+    <div *ngIf="!loading && groupFamilies.length > 0" class="families-grid">
       <!-- Family Card -->
       <div
         *ngFor="let family of groupFamilies"
-        class="family-card"
+        class="curator-card"
         [class.status-all]="family.status === 'ALL'"
         [class.status-partial]="family.status === 'PARTIAL'"
         [class.status-none]="family.status === 'NONE'"
+        [class.selected]="family.isSelected"
         [class.expanded]="family.expanded"
       >
-        <!-- Header (Click to Toggle Visibility) -->
-        <div class="family-header" (click)="toggleFamily(family, $event)">
-          <div class="family-indicator"></div>
-          <!-- Colored Status Bar -->
-          <span class="family-prefix">{{ family.prefix }}</span>
+        <!-- Card Content -->
+        <div class="card-visual-wrapper">
+          <!-- Multi-select Checkbox Trigger -->
+          <div class="select-trigger" (click)="toggleFamilySelection(family, $event)">
+            <div class="checkbox-box" [class.checked]="family.isSelected">
+              <i class="fa fa-check" *ngIf="family.isSelected"></i>
+            </div>
+          </div>
 
-          <div class="family-meta">
-            <span class="badge-count">{{ family.totalCount }}</span>
-            <div class="expand-btn" (click)="toggleExpanded(family, $event)">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                [style.transform]="family.expanded ? 'rotate(180deg)' : 'rotate(0deg)'"
-                style="transition: transform 0.2s"
-              >
-                <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
-              </svg>
+          <!-- Header (Toggle Visibility or Expand) -->
+          <div class="curator-header" (click)="toggleFamily(family, $event)">
+            <div class="status-indicator"></div>
+            <span class="family-name">{{ family.prefix }}</span>
+            <span class="item-count">{{ family.totalCount }}</span>
+
+            <div class="expand-chevron" (click)="toggleExpanded(family, $event)">
+              <i
+                class="fa fa-chevron-down"
+                [style.transform]="family.expanded ? 'rotate(180deg)' : ''"
+              ></i>
             </div>
           </div>
         </div>
 
-        <!-- Sub-Category Drawer (Visible if Expanded) -->
-        <div class="family-drawer" *ngIf="family.expanded">
-          <div class="drawer-content customs-scroll">
+        <!-- Sub-Category Drawer -->
+        <div class="curator-drawer" *ngIf="family.expanded">
+          <div class="drawer-inner customs-scroll">
             <div
               *ngFor="let child of family.children"
-              class="sub-category-row"
+              class="sub-row"
               (click)="toggleSubCategory(child, family)"
             >
-              <div class="sub-status-dot" [class.active]="!child.hidden"></div>
-              <span class="sub-name" [class.text-muted]="child.hidden">{{ child.name }}</span>
-
-              <div class="sub-check" *ngIf="!child.hidden">
-                <i class="fa fa-check text-success"></i>
+              <div class="sub-dot" [class.active]="!child.hidden"></div>
+              <span class="sub-label" [class.archived]="child.hidden">{{ child.name }}</span>
+              <div class="sub-action-icon">
+                <i
+                  class="fa"
+                  [class.fa-eye]="!child.hidden"
+                  [class.fa-eye-slash]="child.hidden"
+                ></i>
               </div>
             </div>
           </div>
@@ -148,7 +151,8 @@
 <div class="modal-footer category-manager-footer py-2">
   <div class="w-100 text-center">
     <small class="text-muted">
-      <strong>Left Click:</strong> Toggle Region. <strong>Arrow Icon:</strong> View Sub-categories.
+      <strong>Card:</strong> Toggle Visibility. <strong>Checkbox:</strong> Multi-select.
+      <strong>Chevron:</strong> View Details.
     </small>
   </div>
 </div>

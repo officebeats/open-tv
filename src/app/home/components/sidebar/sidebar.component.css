@@ -60,6 +60,24 @@
   box-sizing: border-box;
 }
 
+.logo-placeholder {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-soft));
+  border-radius: 12px;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.beats-text {
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
 .nav-section {
   display: flex;
   flex-direction: column;
@@ -75,11 +93,11 @@
   width: 100%;
   aspect-ratio: 1 / 1;
   padding: 0;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.7); /* Lighter, cleaner text */
+  background: rgba(255, 255, 255, 0.05); /* Explicit dark/glass background */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  border-radius: 12px; /* Soft rounding */
+  border-radius: 12px;
   transition: all 0.2s ease;
 }
 

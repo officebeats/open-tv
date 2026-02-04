@@ -15,6 +15,7 @@ export class SidebarComponent {
   @Input() chkMovie = true;
   @Input() chkSerie = true;
   @Input() showSeries = false;
+  logoFailed = false;
 
   @Output() viewModeChanged = new EventEmitter<ViewMode>();
   @Output() mediaTypeToggled = new EventEmitter<MediaType>();
@@ -22,6 +23,12 @@ export class SidebarComponent {
   viewModeEnum = ViewMode;
 
   constructor(public memory: MemoryService) {}
+
+  onLogoError(event: Event) {
+    this.logoFailed = true;
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+  }
 
   switchMode(mode: ViewMode) {
     this.viewModeChanged.emit(mode);

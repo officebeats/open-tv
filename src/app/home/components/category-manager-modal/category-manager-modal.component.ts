@@ -7,7 +7,7 @@ import { ToastrService } from 'ngx-toastr';
 import { MemoryService } from '../../../memory.service';
 
 /**
- * Intelligent Category Grouping System 2.0
+ * Library Curator System 3.0 (Formerly Focus Manager)
  */
 
 export interface CategoryGroup {
@@ -41,7 +41,9 @@ export class CategoryManagerModalComponent implements OnInit {
 
   searchQuery: string = '';
   loading: boolean = true;
-  hideMode: boolean = true; // Default: Hide Mode (True)
+
+  selectedIds: Set<number> = new Set(); // For bulk selection
+  selectedPrefixes: Set<string> = new Set();
 
   hasChanges: boolean = false;
 
@@ -177,15 +179,67 @@ export class CategoryManagerModalComponent implements OnInit {
       });
   }
 
-  // --- Logic: Mode Toggle ---
-  async toggleMode() {
-    this.hideMode = !this.hideMode;
+  /**
+   * Selection Logic
+   */
+  toggleFamilySelection(family: GroupFamily, event: MouseEvent) {
+    if (event) event.stopPropagation();
 
-    if (this.hideMode) {
-      this.toastr.info('Hide Mode: Click items to Hide them.');
+    family.isSelected = !family.isSelected;
+    if (family.isSelected) {
+      this.selectedPrefixes.add(family.prefix);
     } else {
-      this.toastr.info('Whitelist Mode: Click items to Show them.');
+      this.selectedPrefixes.delete(family.prefix);
     }
+  }
+
+  get numSelected(): number {
+    return this.groupFamilies.filter((f) => f.isSelected).length;
+  }
+
+  get selectedActionType(): 'HIDE' | 'SHOW' {
+    const selected = this.groupFamilies.filter((f) => f.isSelected);
+    if (selected.length === 0) return 'HIDE';
+
+    const hiddenCount = selected.filter((f) => f.status === 'NONE').length;
+    // If more than half are hidden, suggest "SHOW"
+    return hiddenCount > selected.length / 2 ? 'SHOW' : 'HIDE';
+  }
+
+  async runSelectionAction(type: 'HIDE' | 'SHOW' | 'FOCUS') {
+    const selectedFamilies = this.groupFamilies.filter((f) => f.isSelected);
+    if (selectedFamilies.length === 0) return;
+
+    let idsToModify: number[] = [];
+    let newState: boolean;
+
+    if (type === 'FOCUS') {
+      // Focus Mode: Hide EVERY category except the ones mentioned in selection
+      idsToModify = this.categories
+        .filter((c) => typeof c.id === 'number')
+        .map((c) => c.id) as number[];
+      newState = true;
+
+      // We actually want to hide all, then UNHIDE the selected ones
+      await this.tauri.call('hide_groups_bulk', { group_ids: idsToModify, hidden: true });
+
+      // Now unhide selected
+      const selectedIds = selectedFamilies.flatMap((f) => f.children.map((c) => c.id));
+      await this.tauri.call('hide_groups_bulk', { group_ids: selectedIds, hidden: false });
+
+      this.toastr.success(`Focused ${selectedFamilies.length} groups.`);
+    } else {
+      newState = type === 'HIDE';
+      idsToModify = selectedFamilies.flatMap((f) =>
+        f.children.map((c) => c.id).filter((id) => typeof id === 'number'),
+      ) as number[];
+
+      await this.tauri.call('hide_groups_bulk', { group_ids: idsToModify, hidden: newState });
+      this.toastr.success(`${newState ? 'Archived' : 'Restored'} ${idsToModify.length} items.`);
+    }
+
+    this.hasChanges = true;
+    this.loadCategories(); // Reload to refresh statuses
   }
 
   // --- Logic: Toggle Actions ---
@@ -206,16 +260,21 @@ export class CategoryManagerModalComponent implements OnInit {
     const hideTarget = family.status === 'ALL';
 
     try {
-      // Safety: Ensure valid IDs
+      // Safety: Ensure valid IDs and cast to integers
       const ids = family.children
         .map((c) => c.id)
-        .filter((id) => typeof id === 'number') as number[];
+        .filter((id) => typeof id === 'number')
+        .map((id) => Math.floor(id!));
 
       if (ids.length === 0) {
         this.toastr.warning('No valid items to toggle in this family.');
         return;
       }
 
+      console.log(
+        `[Curator] Toggling family ${family.prefix} (${hideTarget ? 'HIDE' : 'SHOW'}) IDs:`,
+        ids,
+      );
       await this.tauri.call('hide_groups_bulk', { group_ids: ids, hidden: hideTarget });
 
       // Update Local State
@@ -246,7 +305,10 @@ export class CategoryManagerModalComponent implements OnInit {
 
     try {
       // Single toggle (using bulk api for simplicity with array of 1)
-      await this.tauri.call('hide_groups_bulk', { group_ids: [child.id!], hidden: newHiddenState });
+      const id = Math.floor(child.id!);
+      console.log(`[Curator] Toggling sub-category ${child.name} (ID: ${id}) -> ${newHiddenState}`);
+
+      await this.tauri.call('hide_groups_bulk', { group_ids: [id], hidden: newHiddenState });
 
       // Update Local
       child.hidden = newHiddenState;
@@ -270,17 +332,13 @@ export class CategoryManagerModalComponent implements OnInit {
   // --- Bulk Global Actions ---
 
   async hideAll() {
-    if (!confirm('Hide ALL categories? This is useful for Whitelist Mode.')) return;
+    if (!confirm('Archive ALL categories? This will hide everything from your view.')) return;
     await this.applyBulkGlobal(true);
-    // Hide ALL -> We are effectively in Whitelist Mode (Hide Mode = False)
-    this.hideMode = false;
   }
 
   async unhideAll() {
-    if (!confirm('Show ALL categories? This resets everything to visible.')) return;
+    if (!confirm('Restore ALL categories? This resets everything to visible.')) return;
     await this.applyBulkGlobal(false);
-    // Show ALL -> We are back to standard Hide Mode (Hide Mode = True)
-    this.hideMode = true;
   }
 
   private async applyBulkGlobal(hidden: boolean) {

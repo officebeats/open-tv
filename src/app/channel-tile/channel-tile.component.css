@@ -88,8 +88,8 @@
   height: 48px;
   border-radius: 8px;
   overflow: hidden;
-  background: transparent; /* Transparent as requested */
-  border: none; /* Clean look without box */
+  background: rgba(0, 0, 0, 0.5); /* Explicit dark background */
+  border: 1px solid rgba(255, 255, 255, 0.05); /* Soft border */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -108,14 +108,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f0f4f8;
+  background: linear-gradient(135deg, rgba(30, 35, 45, 0.8), rgba(20, 25, 35, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
 }
 
 .placeholder-text {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #cbd5e1;
+  color: rgba(0, 229, 255, 0.6);
   text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
 }
 
 /* Info Column */
