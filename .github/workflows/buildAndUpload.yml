@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         node-version: [20.x]
-        os: [windows-latest, macos-latest, macos-14, ubuntu-22.04]
+        os: [windows-latest, macos-latest, ubuntu-22.04]
 
     steps:
       - uses: actions/checkout@v4
@@ -43,8 +43,8 @@ jobs:
           $response = Invoke-WebRequest -Uri $nightlyPage -UseBasicParsing
           $latestUrl = $response.Links.Href | Where-Object { $_ -match "x86_64-pc-windows-msvc\.zip$" } | Select-Object -First 1
 
-          $retryCount = 3
-          $retryDelay = 5
+          $retryCount = 5
+          $retryDelay = 10
 
           for ($i = 1; $i -le $retryCount; $i++) {
               try {
@@ -63,8 +63,8 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: powershell
         run: |
-          $retryCount = 3
-          $retryDelay = 5
+          $retryCount = 5
+          $retryDelay = 10
           for ($i = 1; $i -le $retryCount; $i++) {
               try {
                   Invoke-WebRequest -UserAgent "Wget" -Uri "https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip" -OutFile .\ffmpeg.zip
@@ -81,8 +81,8 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: powershell
         run: |
-          $retryCount = 3
-          $retryDelay = 5
+          $retryCount = 5
+          $retryDelay = 10
           for ($i = 1; $i -le $retryCount; $i++) {
               try {
                   Invoke-WebRequest -UserAgent "Wget" -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile yt-dlp.exe
@@ -127,10 +127,10 @@ jobs:
         run: |
           pnpm install
 
-      - name: Build Mac
+      - name: Build Mac (Universal)
         if: startsWith(matrix.os, 'macos-')
         run: |
-          pnpm run tauri build
+          pnpm run tauri build --target universal-apple-darwin
 
       - name: Build Windows
         if: matrix.os == 'windows-latest'
