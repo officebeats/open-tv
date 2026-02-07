@@ -26,8 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          cache-workspaces: "src-tauri -> target"
+        # Cache disabled to prevent corruption
+        # with:
+        #   cache-workspaces: "src-tauri -> target"
 
       - name: Add Mac Targets
         if: startsWith(matrix.os, 'macos-')
@@ -126,24 +127,26 @@ jobs:
       - name: Install deps project
         run: |
           pnpm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Build Mac (Intel & Silicon)
         if: startsWith(matrix.os, 'macos-')
         run: |
           echo "Building for Apple Silicon (ARM64)..."
-          pnpm run tauri build --target aarch64-apple-darwin
+          pnpm run tauri build --target aarch64-apple-darwin --verbose
           echo "Building for Intel (x64)..."
-          pnpm run tauri build --target x86_64-apple-darwin
+          pnpm run tauri build --target x86_64-apple-darwin --verbose
 
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         run: |
-          pnpm run tauri build
+          pnpm run tauri build --verbose
 
       - name: Build Linux
         if: matrix.os == 'ubuntu-22.04'
         run: |
-          pnpm run tauri build --bundles deb,rpm,appimage
+          pnpm run tauri build --bundles deb --verbose
 
       - name: Prepare Artifacts for Upload
         shell: bash
