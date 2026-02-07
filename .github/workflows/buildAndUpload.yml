@@ -26,9 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-        # Cache disabled to prevent corruption
-        # with:
-        #   cache-workspaces: "src-tauri -> target"
+        with:
+          cache: false
 
       - name: Add Mac Targets
         if: startsWith(matrix.os, 'macos-')
