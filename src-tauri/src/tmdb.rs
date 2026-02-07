@@ -116,6 +116,7 @@ pub struct Video {
 #[derive(Debug, Deserialize)]
 struct SearchResponse {
     results: Vec<TmdbSearchResult>,
+    #[allow(dead_code)]
     total_results: i32,
 }
 
