@@ -62,3 +62,4 @@ build_*.txt
 
 # Rust/Tauri build artifacts
 /src-tauri/target/
+/src-tauri/deps/

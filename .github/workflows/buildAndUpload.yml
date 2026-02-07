@@ -127,10 +127,13 @@ jobs:
         run: |
           pnpm install
 
-      - name: Build Mac (Universal)
+      - name: Build Mac (Intel & Silicon)
         if: startsWith(matrix.os, 'macos-')
         run: |
-          pnpm run tauri build --target universal-apple-darwin
+          echo "Building for Apple Silicon (ARM64)..."
+          pnpm run tauri build --target aarch64-apple-darwin
+          echo "Building for Intel (x64)..."
+          pnpm run tauri build --target x86_64-apple-darwin
 
       - name: Build Windows
         if: matrix.os == 'windows-latest'
@@ -154,9 +157,10 @@ jobs:
             find src-tauri/target/release/bundle/rpm -name "*.rpm" -exec cp {} upload_payload/ \;
             find src-tauri/target/release/bundle/appimage -name "*.AppImage" -exec cp {} upload_payload/ \;
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            find src-tauri/target/release/bundle/dmg -name "*.dmg" -exec cp {} upload_payload/ \;
-          elif [[ "${{ matrix.os }}" == "macos-14" ]]; then
-            find src-tauri/target/release/bundle/dmg -name "*.dmg" -exec cp {} upload_payload/ \;
+            # Harvest artifacts from all possible target locations
+            find src-tauri/target/release/bundle/dmg -name "*.dmg" -exec cp {} upload_payload/ \; 2>/dev/null || true
+            find src-tauri/target/aarch64-apple-darwin/release/bundle/dmg -name "*.dmg" -exec cp {} upload_payload/ \; 2>/dev/null || true
+            find src-tauri/target/x86_64-apple-darwin/release/bundle/dmg -name "*.dmg" -exec cp {} upload_payload/ \; 2>/dev/null || true
           fi
 
       - name: Upload Build Artifacts
