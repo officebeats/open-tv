@@ -21,7 +21,7 @@
       [chkMovie]="filterService.chkMovie()"
       [chkSerie]="filterService.chkSerie()"
       [showSeries]="anyXtream()"
-      (viewModeChanged)="filterService.switchViewMode($event)"
+      (viewModeChanged)="onViewModeChanged($event)"
       (mediaTypeToggled)="onMediaTypeToggled($event)"
     ></app-sidebar>
 
@@ -51,7 +51,7 @@
       ></app-bulk-action-bar>
 
       <app-filter-chips
-        *ngIf="(filterService.filters?.media_types?.length || 0) > 0"
+        *ngIf="getFilterChips().length > 0"
         [chips]="getFilterChips()"
         (filterChanged)="onFilterChipChanged($event)"
       ></app-filter-chips>

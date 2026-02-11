@@ -1,12 +1,15 @@
-## ✨ Release v2.1.9
+# Beats TV v2.1.9 (Verified)
 
-### ✅ UI Verified Fixed
+## 🚀 Enhancements
 
-- **Verified Layout**: Fixed the "broken layout" issue. Added automated Playwright testing during the build process to verify the Sidebar dimensions (90px) and Logo height (48px) are correctly applied.
-- **Resilient Styling**: Fixed CSS selector collision by reverting to `ViewEncapsulation.Emulated` and adding `:host` layout protection.
-- **CSP Optimization**: Updated Content Security Policy and disabled `inlineCritical` CSS loading to ensure stylesheets load immediately on all systems without being blocked by the WebView.
+- **UI Spacing Fix**: Resolved the 90px gap between the sidebar and content list by correcting flex layout margins. Verified 90px alignment with Playwright.
+- **Redundant Chips Removed**: Eliminated "Live TV", "Movies", and "Series" chips from the top bar (redundant with sidebar switches).
+- **Category Filtering Fix**: Improved backend SQL query to strictly honor hidden group settings during search. No "orphan" channels from hidden groups.
+- **Library Editor UX**: Added backdrop dismissal (exit by tapping outside) and ensured the channel list automatically refreshes when changes are made.
+- **Resilient Styling**: Fixed production CSS loading by relaxing CSP and disabling inlineCritical styles.
 
-_(Includes improvements from v2.1.7 and v2.1.8)_
+## 🛠 Previous Fixes (v2.1.7-v2.1.8)
 
-- **Content Filter Logic**: Fixed bug where deselecting all categories showed stale content.
-- **Performance**: Optimized list reloading on filter toggles.
+- Dynamic glassmorphism scaling.
+- Fixed logo bleeding in sidebar.
+- Added modern "Ascension" design accents.

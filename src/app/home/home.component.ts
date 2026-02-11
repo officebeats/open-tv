@@ -129,18 +129,30 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   openCategoryManager() {
     const modalRef = this.modalService.open(CategoryManagerModalComponent, {
       size: 'xl',
-      backdrop: 'static',
+      backdrop: true,
       keyboard: true,
       windowClass: 'premium-modal',
     });
 
-    modalRef.result
-      .then((result) => {
-        if (result === true) {
+    // Handle both close (success) and dismiss (backdrop/ESC)
+    modalRef.result.then(
+      () => {
+        if (modalRef.componentInstance.hasChanges) {
           this.reload();
         }
-      })
-      .catch(() => {});
+      },
+      () => {
+        if (modalRef.componentInstance.hasChanges) {
+          this.reload();
+        }
+      },
+    );
+  }
+
+  async onViewModeChanged(mode: ViewMode) {
+    console.log(`[Home] View mode changing to: ${mode}`);
+    this.filterService.switchViewMode(mode);
+    await this.load();
   }
 
   bulkActionFromBar(action: string) {
@@ -693,10 +705,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  /**
-   * Get filter chips from the current filter state
-   * Transforms media types into FilterChip format for the UI
-   */
   getFilterChips(): FilterChip[] {
     const mediaTypes = this.filterService.filters?.media_types || [];
     const mediaTypeLabels: Record<MediaType, string> = {
@@ -707,12 +715,17 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       [MediaType.season]: 'Seasons',
     };
 
-    return mediaTypes.map((type) => ({
-      id: `media-${type}`,
-      label: mediaTypeLabels[type] || MediaType[type],
-      active: true,
-      type: 'media' as const,
-      value: type,
-    }));
+    return mediaTypes
+      .filter(
+        (type) =>
+          type !== MediaType.livestream && type !== MediaType.movie && type !== MediaType.serie,
+      )
+      .map((type) => ({
+        id: `media-${type}`,
+        label: mediaTypeLabels[type] || MediaType[type],
+        active: true,
+        type: 'media' as const,
+        value: type,
+      }));
   }
 }

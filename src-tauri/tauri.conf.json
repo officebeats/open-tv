@@ -1,6 +1,6 @@
 {
   "productName": "Beats TV",
-  "version": "2.1.9",
+  "version": "3.0.0-1",
   "identifier": "com.beatstv.app",
   "build": {
     "frontendDist": "../dist/open-tv/browser",
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "Beats TV (v2.1.9)",
+        "title": "Beats TV (v3.0.0-test.1)",
         "width": 1280,
         "height": 720,
         "resizable": true,

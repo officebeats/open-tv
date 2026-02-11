@@ -34,9 +34,18 @@ test('Verify UI Layout Integration', async ({ page }) => {
   console.log(`Body background color: ${bgColor}`);
   expect(bgColor).toBe('rgb(0, 0, 0)');
 
-  // Check if Navigation items are displayed as a list (Flex/Grid)
-  const navItems = page.locator('.nav-item');
-  const count = await navItems.count();
-  console.log(`Nav items found: ${count}`);
-  expect(count).toBeGreaterThan(0);
+  // Check if Media Type chips are absent (should be filtered now)
+  const chips = page.locator('app-filter-chips .chip-label');
+  const chipTexts = await chips.allTextContents();
+  console.log(`Filter chips found: ${chipTexts.join(', ')}`);
+
+  const redundant = chipTexts.some((t) => ['Live TV', 'Movies', 'Series'].includes(t));
+  expect(redundant, 'Redundant media type chips should not be visible').toBe(false);
+
+  // Check content container alignment
+  const content = page.locator('.content-container');
+  const contentBox = await content.boundingBox();
+  console.log(`Content start x: ${contentBox?.x}`);
+  // Content should start right after sidebar (width 90, so x should be 90)
+  expect(contentBox?.x).toBeCloseTo(90, 1);
 });

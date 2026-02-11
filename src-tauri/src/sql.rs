@@ -666,7 +666,7 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
 
     let mut sql_query = format!(
         r#"
-        SELECT * FROM CHANNELS
+        SELECT * FROM channels
         WHERE ({})
         AND media_type IN ({})
         AND source_id IN ({})
@@ -678,7 +678,7 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
 
     if filters.show_hidden.unwrap_or(false) == false {
         sql_query += "\nAND hidden = 0";
-        sql_query += "\nAND NOT EXISTS (SELECT 1 FROM groups WHERE groups.id = CHANNELS.group_id AND groups.hidden = 1)";
+        sql_query += "\nAND (group_id IS NULL OR group_id NOT IN (SELECT id FROM groups WHERE hidden = 1))";
     }
     let mut baked_params = 2;
     if filters.view_type == view_type::FAVORITES && filters.series_id.is_none() {
