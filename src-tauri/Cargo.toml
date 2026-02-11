@@ -1,6 +1,6 @@
 [package]
 name = "open_tv"
-version = "3.0.0-1"
+version = "3.0.0-2"
 description = "Fast And Powerful IPTV App"
 authors = ["Frédéric Lachapelle"]
 license = "GPL-2.0"

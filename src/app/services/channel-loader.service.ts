@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Channel } from '../models/channel';
 import { Filters } from '../models/filters';
 import { MediaType } from '../models/mediaType';
+import { ViewMode } from '../models/viewMode';
 import { TauriService } from './tauri.service';
 import { PlaylistService } from './playlist.service';
 import { SettingsService } from './settings.service';
@@ -90,6 +91,7 @@ export class ChannelLoaderService {
       filters.page++;
     } else {
       filters.page = 1;
+      this.channels = []; // Clear current channels for fresh load
     }
 
     // Ensure hidden filter is set
@@ -110,8 +112,14 @@ export class ChannelLoaderService {
     try {
       let channels = await this.fetchChannels(filters);
 
-      // Handle empty results with auto-refresh
-      if (!more && channels.length === 0 && !filters.query && this.memory.Sources.size > 0) {
+      // Handle empty results with auto-refresh (only for 'All' view mode)
+      if (
+        !more &&
+        channels.length === 0 &&
+        !filters.query &&
+        filters.view_type === ViewMode.All &&
+        this.memory.Sources.size > 0
+      ) {
         channels = await this.handleEmptyResults(filters);
       }
 

@@ -143,6 +143,11 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
     // DEBUG: Alert before play
     // window.alert(`[Play] URL: ${this.channel?.url}`);
 
+    // Track historical watch immediately on start
+    this.tauri.call('add_last_watched', { id: this.channel?.id }).catch((e) => {
+      console.error('[History] Failed to add last watched:', e);
+    });
+
     try {
       if (!this.channel) return;
       const simplifiedChannel = {
@@ -171,10 +176,6 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
     } finally {
       this.starting = false;
     }
-
-    this.tauri.call('add_last_watched', { id: this.channel?.id }).catch((e) => {
-      console.error(e);
-    });
   }
 
   onRightClick(event: MouseEvent) {
