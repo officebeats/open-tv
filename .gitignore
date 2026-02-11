@@ -70,3 +70,6 @@ src-tauri/pfl_channels.txt
 # Rust/Tauri build artifacts
 /src-tauri/target/
 /src-tauri/deps/
+
+# Agent configuration (local only)
+.agent/
